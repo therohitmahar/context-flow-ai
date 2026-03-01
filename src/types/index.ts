@@ -19,8 +19,9 @@ export interface ContextNodeData extends Record<string, unknown> {
   contentType: ContentType;
   content: string;
   instruction: string;
-  enabled: boolean;
   isMemory?: boolean;
+  isDraft?: boolean;
+  color?: string;
 }
 
 // Data carried by the Composer Node
@@ -71,6 +72,7 @@ export interface SavedContext {
   contentType: ContentType;
   content: string;
   instruction: string;
+  color?: string;
 }
 
 // Context menu state
@@ -84,37 +86,15 @@ export const MODELS = [
   { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', color: '#4285f4' },
 ] as const;
 
-export const SAVED_CONTEXTS: SavedContext[] = [
-  {
-    id: 'saved-resume',
-    title: 'My Resume 2023',
-    subtitle: 'PDF • 2 pages',
-    contentType: 'file',
-    content: 'Senior Frontend Developer with 5 years of experience in React, Node.js, and TypeScript. Proficient in building scalable web applications, performance optimization, and leading cross-functional teams. Previous experience at TechCorp and PreviousCo.',
-    instruction: 'Extract relevant skills and experience for the job description',
-  },
-  {
-    id: 'saved-profile',
-    title: 'User Profile',
-    subtitle: 'Core Values',
-    contentType: 'memory',
-    content: 'Name: Alex Chen. Role: Senior Frontend Developer. Experience: 5 years. Tone preference: Professional but approachable. Key skills: React, TypeScript, Node.js, AWS. Looking for remote-friendly senior roles.',
-    instruction: 'Use for personalization and context throughout all outputs',
-  },
-  {
-    id: 'saved-tone',
-    title: 'Tone: Professional',
-    subtitle: 'System Prompt',
-    contentType: 'text',
-    content: 'Always maintain a professional, confident, and concise tone. Avoid filler phrases. Use active voice. Be direct while remaining warm and approachable. Avoid clichés like "I am passionate about".',
-    instruction: 'Apply tone guidelines to all generated content',
-  },
-  {
-    id: 'saved-guidelines',
-    title: 'React Guidelines',
-    subtitle: 'Tech Stack',
-    contentType: 'text',
-    content: 'Project uses React 18, TypeScript strict mode, Tailwind CSS, Zustand for state, React Query for data fetching. Follow hooks-first patterns. Components should be under 200 lines. Co-locate tests with components.',
-    instruction: 'Ensure all code suggestions follow these guidelines',
-  },
+export const NODE_COLORS = [
+  '#3b82f6', // blue-500
+  '#ec4899', // pink-500
+  '#10b981', // emerald-500
+  '#8b5cf6', // violet-500
+  '#f59e0b', // amber-500
+  '#0ea5e9', // sky-500
+  '#ef4444', // red-500
+  '#14b8a6', // teal-500
 ];
+
+export const SAVED_CONTEXTS: SavedContext[] = [];

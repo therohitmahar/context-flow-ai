@@ -1,43 +1,14 @@
 import React from 'react';
-import { clsx } from 'clsx';
 import {
   FileText,
-  Link2,
-  File,
-  Zap,
-  GripVertical,
   User,
   Volume2,
   Code2,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
-import type { ContentType } from '../../types';
-import { SAVED_CONTEXTS } from '../../types';
-
-interface LibraryButtonProps {
-  label: string;
-  icon: React.ReactNode;
-  contentType: ContentType;
-  color: string;
-  onClick: () => void;
-}
-
-const LibraryButton: React.FC<LibraryButtonProps> = ({ label, icon, onClick, color }) => (
-  <button
-    onClick={onClick}
-    className={clsx(
-      'flex flex-col items-center justify-center p-3 rounded-lg border transition-all group',
-      'bg-[#1a202c] border-[#2d3748] hover:border-[#135bec]/50 hover:bg-[#135bec]/5'
-    )}
-  >
-    <span style={{ color }} className="mb-1 group-hover:scale-110 transition-transform">
-      {icon}
-    </span>
-    <span className="text-xs font-medium text-slate-300">
-      {label}
-    </span>
-  </button>
-);
+import { useState, useRef, useEffect } from 'react';
 
 const savedContextIcons: Record<string, React.ReactNode> = {
   'saved-resume': <FileText size={14} />,
@@ -46,42 +17,71 @@ const savedContextIcons: Record<string, React.ReactNode> = {
   'saved-guidelines': <Code2 size={14} />,
 };
 
-const savedContextColors: Record<string, string> = {
-  'saved-resume': '#3b82f6',
-  'saved-profile': '#a855f7',
-  'saved-tone': '#f59e0b',
-  'saved-guidelines': '#22c55e',
-};
+
 
 const Sidebar: React.FC = () => {
-  const { addContextNode, addSavedContext } = useStore();
+  const { addSavedContext, savedContexts, openModal, deleteSavedContext } = useStore();
+  const [width, setWidth] = useState(256);
+  const isResizing = useRef(false);
 
-  const libraryItems = [
-    { label: 'Text', icon: <FileText size={18} />, type: 'text' as ContentType, color: '#135bec' },
-    { label: 'URL', icon: <Link2 size={18} />, type: 'url' as ContentType, color: '#a855f7' },
-    { label: 'File', icon: <File size={18} />, type: 'file' as ContentType, color: '#f59e0b' },
-    { label: 'API', icon: <Zap size={18} />, type: 'api' as ContentType, color: '#22c55e' },
-  ];
+  const handleAddBlock = () => {
+    openModal('add-node');
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing.current) return;
+      let newWidth = e.clientX;
+      if (newWidth < 200) newWidth = 200;
+      if (newWidth > 600) newWidth = 600;
+      setWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      if (isResizing.current) {
+        isResizing.current = false;
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = 'auto'; // Re-enable text selection
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+  const startResizing = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none'; // Prevent text selection during drag
+  };
 
   return (
-    <aside className="w-64 shrink-0 flex flex-col border-r border-[#2d3748] bg-[#111318] z-10 overflow-hidden">
-      {/* Library section */}
+    <aside 
+      className="shrink-0 flex flex-col border-r border-[#2d3748] bg-[#111318] z-10 overflow-hidden relative"
+      style={{ width }}
+    >
+      <div 
+        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-[#135bec]/30 transition-colors z-20 group-hover:block"
+        onMouseDown={startResizing}
+      />
       <div className="p-4 border-b border-[#2d3748]">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
           Library
         </h3>
-        <div className="grid grid-cols-2 gap-2">
-          {libraryItems.map((item) => (
-            <LibraryButton
-              key={item.type}
-              label={item.label}
-              icon={item.icon}
-              contentType={item.type}
-              color={item.color}
-              onClick={() => addContextNode(item.type)}
-            />
-          ))}
-        </div>
+        <button
+          onClick={handleAddBlock}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all bg-[#2563eb] hover:bg-[#1d4ed8] text-white shadow-lg shadow-blue-500/20 active:scale-[0.98]"
+        >
+          <div className="flex items-center justify-center w-4 h-4 rounded-full border border-white">
+            <span className="text-white text-xs leading-none">+</span>
+          </div>
+          Add New Block
+        </button>
       </div>
 
       {/* Saved Contexts */}
@@ -90,46 +90,69 @@ const Sidebar: React.FC = () => {
           Saved Contexts
         </h3>
         <div className="space-y-2">
-          {SAVED_CONTEXTS.map((ctx) => {
-            const ctxColor = savedContextColors[ctx.id] ?? '#6366f1';
+          {savedContexts.map((ctx) => {
+            const ctxColor = ctx.color || '#6366f1';
             return (
-              <button
+              <div
                 key={ctx.id}
-                onClick={() => addSavedContext(ctx)}
-                className="flex items-center gap-3 w-full p-3 rounded-lg bg-[#1a202c] border border-[#2d3748] cursor-grab active:cursor-grabbing hover:border-[#135bec]/50 transition-colors shadow-sm text-left group"
-                title={`Add "${ctx.title}" to canvas`}
+                className="flex items-center gap-3 w-full p-3 rounded-lg bg-[#1a202c] border border-[#2d3748] hover:border-[#135bec]/50 transition-colors shadow-sm text-left group"
               >
-                {/* Icon */}
-                <div
-                  className="w-8 h-8 rounded flex items-center justify-center shrink-0"
-                  style={{ background: ctxColor + '1a', color: ctxColor }}
+                {/* Clickable area to add to canvas */}
+                <button
+                  onClick={() => addSavedContext(ctx)}
+                  className="flex-1 flex items-center gap-3 min-w-0"
+                  title={`Add "${ctx.title}" to canvas`}
                 >
-                  {savedContextIcons[ctx.id] ?? <FileText size={14} />}
-                </div>
+                  {/* Icon */}
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: ctxColor + '15', color: ctxColor }}
+                  >
+                    {savedContextIcons[ctx.id] ?? <FileText size={16} />}
+                  </div>
 
-                {/* Text */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
-                    {ctx.title}
-                  </p>
-                  <p className="text-xs text-slate-400 truncate">
-                    {ctx.subtitle}
-                  </p>
-                </div>
+                  {/* Text */}
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-sm font-bold text-white truncate">
+                      @{ctx.title}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate mt-0.5">
+                      Text Context
+                    </p>
+                  </div>
+                </button>
 
-                {/* Drag handle */}
-                <GripVertical
-                  size={14}
-                  className="text-slate-600 group-hover:text-slate-400 shrink-0 transition-colors"
-                />
-              </button>
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-1 items-center shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openModal('edit-saved', ctx.id);
+                    }}
+                    className="w-7 h-7 rounded flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors"
+                    title="Edit Context"
+                  >
+                    <Pencil size={13} />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteSavedContext(ctx.id);
+                    }}
+                    className="w-7 h-7 rounded flex items-center justify-center text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    title="Delete Context"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
             );
           })}
         </div>
       </div>
 
       {/* Storage bar */}
-      <div className="p-4 border-t border-[#2d3748] bg-[#111318]">
+      {/* <div className="p-4 border-t border-[#2d3748] bg-[#111318]">
         <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
           <span>Storage Used</span>
           <span>45%</span>
@@ -137,7 +160,7 @@ const Sidebar: React.FC = () => {
         <div className="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden">
           <div className="h-full bg-[#135bec] w-[45%] rounded-full" />
         </div>
-      </div>
+      </div> */}
     </aside>
   );
 };

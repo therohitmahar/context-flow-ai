@@ -1,17 +1,22 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { clsx } from 'clsx';
 import {
   Search,
   Settings,
   Play,
-  ChevronRight,
   Loader2,
   Clock,
   Undo2,
   Redo2,
   RotateCcw,
+  LogOut,
+  User,
+  Share2,
 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
+import { supabase } from '../../lib/supabase';
+import CreateTemplateModal from '../CreateTemplateModal/CreateTemplateModal';
+import { AppIcon } from '../icons/AppIcon';
 
 const TopBar: React.FC = () => {
   const {
@@ -26,9 +31,34 @@ const TopBar: React.FC = () => {
     reset,
     past,
     future,
+    user,
+    updateProjectName,
   } = useStore();
 
+  const handleLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+    });
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const canUndo = past.length > 0;
   const canRedo = future.length > 0;
@@ -68,22 +98,22 @@ const TopBar: React.FC = () => {
     <header className="h-14 shrink-0 flex items-center gap-3 px-6 border-b border-[#2d3748] bg-[#111318] z-50 relative">
       {/* Logo */}
       <div className="flex items-center gap-2.5 mr-2">
-        <div className="w-8 h-8 rounded-lg bg-[#135bec] flex items-center justify-center shadow-lg shadow-blue-600/30">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <rect x="1" y="4" width="5" height="6" rx="1" fill="white" fillOpacity="0.9"/>
-            <rect x="8" y="2" width="5" height="4" rx="1" fill="white" fillOpacity="0.6"/>
-            <rect x="8" y="8" width="5" height="4" rx="1" fill="white" fillOpacity="0.6"/>
-            <line x1="6" y1="7" x2="8" y2="4.5" stroke="white" strokeOpacity="0.7" strokeWidth="1"/>
-            <line x1="6" y1="7" x2="8" y2="9.5" stroke="white" strokeOpacity="0.7" strokeWidth="1"/>
-          </svg>
+        <div className="w-8 h-8 rounded-lg bg-[#135bec] flex items-center justify-center shadow-lg shadow-blue-600/30 text-white">
+          <AppIcon size={14} />
         </div>
         <span className="text-lg font-bold text-white tracking-tight">Context Stacker</span>
       </div>
 
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-1 text-sm text-slate-400">
-        <ChevronRight size={14} />
-        <span className="text-slate-300 font-medium">{activeProject.name}</span>
+      {/* App Title & Version Status */}
+      <div className="flex items-center gap-3">
+        <input
+          type="text"
+          value={activeProject?.name || 'Untitled Flow'}
+          onChange={(e) => updateProjectName(e.target.value)}
+          className="text-sm font-semibold text-white bg-transparent outline-none hover:bg-white/[0.05] focus:bg-white/[0.05] focus:ring-1 ring-indigo-500/50 rounded px-1.5 py-0.5 transition-all w-48 truncate"
+          placeholder="Flow name..."
+        />
+        <div className="h-4 w-px bg-slate-700"></div>
       </div>
 
       {/* Auto-save pill */}
@@ -182,12 +212,22 @@ const TopBar: React.FC = () => {
         <Settings size={16} />
       </button>
 
+      {/* Share Template */}
+      <button
+        onClick={() => setIsTemplateModalOpen(true)}
+        className="flex items-center justify-center gap-2 h-8 px-3 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-sm font-semibold transition-all"
+        title="Share your layout as a template"
+      >
+        <Share2 size={13} />
+        <span className="hidden sm:inline">Share Template</span>
+      </button>
+
       {/* Run Flow */}
       <button
         onClick={runFlow}
         disabled={isGenerating}
         className={clsx(
-          'flex items-center gap-2 h-8 px-4 rounded-lg text-sm font-semibold transition-all',
+          'flex items-center gap-2 h-8 px-4 rounded-lg text-sm font-semibold transition-all mr-2',
           isGenerating
             ? 'bg-indigo-700/50 text-indigo-300 cursor-not-allowed'
             : 'bg-[#135bec] text-white hover:bg-blue-600 shadow-lg shadow-[#135bec]/20'
@@ -206,10 +246,56 @@ const TopBar: React.FC = () => {
         )}
       </button>
 
-      {/* Avatar */}
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-xs font-bold text-white shadow">
-        AC
-      </div>
+      {/* Auth UI */}
+      {!user ? (
+        <button
+          onClick={handleLogin}
+          className="h-8 px-4 rounded-lg bg-white/10 hover:bg-white/20 text-sm font-semibold text-white transition-colors"
+        >
+          Sign In
+        </button>
+      ) : (
+        <div className="relative" ref={userMenuRef}>
+          <button
+            onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+            className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300 shadow overflow-hidden border border-slate-700 hover:border-slate-500 transition-colors focus:outline-none focus:ring-2 focus:ring-[#135bec]/50"
+          >
+            {user.user_metadata?.avatar_url ? (
+              <img src={user.user_metadata.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <User size={16} />
+            )}
+          </button>
+          
+          {isUserMenuOpen && (
+            <div className="absolute right-0 top-full mt-2 w-48 bg-[#1a202c] border border-[#2d3748] rounded-xl shadow-xl overflow-hidden z-50 py-1">
+              <div className="px-3 py-2 border-b border-[#2d3748] mb-1">
+                <p className="text-sm font-medium text-white truncate">
+                  {user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
+                </p>
+                <p className="text-xs text-slate-400 truncate">
+                  {user.email || 'Anonymous Session'}
+                </p>
+              </div>
+              
+              <button
+                onClick={() => {
+                  setIsUserMenuOpen(false);
+                  handleLogout();
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-colors text-left"
+              >
+                <LogOut size={14} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isTemplateModalOpen && (
+        <CreateTemplateModal onClose={() => setIsTemplateModalOpen(false)} />
+      )}
     </header>
   );
 };

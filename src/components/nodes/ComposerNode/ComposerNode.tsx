@@ -201,7 +201,7 @@ const ComposerNode: React.FC<NodeProps> = ({ id, data, selected }) => {
       ))}
 
       {/* Output handle */}
-      <Handle
+      {/* <Handle
         type="source"
         position={Position.Right}
         id="output"
@@ -213,7 +213,7 @@ const ComposerNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           right: -6,
           boxShadow: '0 0 8px rgba(19,91,236,0.8)',
         }}
-      />
+      /> */}
 
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-[#2d3748] bg-slate-800/50 rounded-t-xl">

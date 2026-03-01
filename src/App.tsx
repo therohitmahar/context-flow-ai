@@ -1,37 +1,39 @@
 import React, { useEffect } from 'react';
-import { ReactFlowProvider } from '@xyflow/react';
-import TopBar from './components/TopBar/TopBar';
-import Sidebar from './components/Sidebar/Sidebar';
-import Canvas from './components/Canvas/Canvas';
-import OutputPanel from './components/OutputPanel/OutputPanel';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import LandingPage from './pages/LandingPage';
+import FlowPage from './pages/FlowPage';
+import Dashboard from './pages/Dashboard';
+import { supabase } from './lib/supabase';
 import { useStore } from './store/useStore';
 
-const AppInner: React.FC = () => {
-  const { load } = useStore();
+const App: React.FC = () => {
+  const { user } = useStore();
 
   useEffect(() => {
-    load();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      useStore.getState().setUser(session?.user || null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      useStore.getState().setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
-
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#101622]">
-
-      <TopBar />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        <Canvas />
-        <OutputPanel />
-      </div>
-    </div>
-  );
-};
-
-// Wrap with ReactFlowProvider so hooks like useEdges() work inside node components
-const App: React.FC = () => {
-  return (
-    <ReactFlowProvider>
-      <AppInner />
-    </ReactFlowProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route 
+          path="/" 
+          element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} 
+        />
+        <Route 
+          path="/dashboard" 
+          element={user ? <Dashboard /> : <Navigate to="/" replace />} 
+        />
+        <Route path="/flow/:id" element={<FlowPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 

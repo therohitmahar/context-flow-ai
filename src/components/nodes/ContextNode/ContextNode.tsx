@@ -13,6 +13,7 @@ import {
   Copy,
   ChevronDown,
   ChevronUp,
+  Pencil,
 } from 'lucide-react';
 import type { ContextNodeData, ContentType } from '../../../types';
 import { useStore } from '../../../store/useStore';
@@ -53,55 +54,16 @@ const TYPE_CONFIG: Record<
   },
 };
 
-// Toggle switch
-const Toggle: React.FC<{ checked: boolean; onChange: () => void }> = ({ checked, onChange }) => (
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      onChange();
-    }}
-    className={clsx(
-      'relative w-8 h-4 rounded-full transition-all duration-200 shrink-0',
-      checked ? 'bg-indigo-500' : 'bg-white/10'
-    )}
-  >
-    <span
-      className={clsx(
-        'absolute top-0.5 w-3 h-3 rounded-full transition-all duration-200 shadow',
-        checked ? 'left-4 bg-white' : 'left-0.5 bg-slate-400'
-      )}
-    />
-  </button>
-);
+// Removed Toggle since connection and prompt mentions will handle usage
+
 
 const ContextNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const nodeData = data as ContextNodeData;
-  const { updateNodeData, removeNode, duplicateNode, setContextMenu } = useStore();
+  const { duplicateNode, removeNode, setContextMenu, openModal } = useStore();
   const [collapsed, setCollapsed] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   const config = TYPE_CONFIG[nodeData.contentType] ?? TYPE_CONFIG.text;
-
-  const handleTitleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      updateNodeData(id, { title: e.target.value });
-    },
-    [id, updateNodeData]
-  );
-
-  const handleContentChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      updateNodeData(id, { content: e.target.value });
-    },
-    [id, updateNodeData]
-  );
-
-  const handleInstructionChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      updateNodeData(id, { instruction: e.target.value });
-    },
-    [id, updateNodeData]
-  );
 
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
@@ -112,13 +74,14 @@ const ContextNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     [id, setContextMenu]
   );
 
+  const nodeColor = nodeData.color || config.color;
+
   return (
     <div
       onContextMenu={handleContextMenu}
       className={clsx(
         'w-[260px] rounded-xl border transition-all duration-200 group',
         'bg-[#1a202c] shadow-xl',
-        nodeData.enabled ? '' : 'node-disabled',
         selected
           ? 'border-indigo-500/60 shadow-indigo-500/20'
           : 'border-[#2d3748] hover:border-[#4a5568]'
@@ -126,106 +89,109 @@ const ContextNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     >
       {/* Top color bar */}
       <div
-        className="h-1.5 w-full rounded-t-xl"
-        style={{ background: config.color }}
+        className="h-1.5 w-full rounded-t-xl transition-colors duration-300"
+        style={{ background: nodeColor }}
       />
 
       {/* Header */}
       <div className="flex items-start justify-between px-4 pt-4 pb-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 max-w-[150px]">
           {/* Type icon */}
-          <div style={{ color: config.color }}>
+          <div style={{ color: nodeColor }} className="shrink-0 transition-colors duration-300">
             {config.icon}
           </div>
 
           {/* @Title */}
-          <div className="flex items-center gap-0.5">
-            <h4 style={{ color: config.color }} className="text-sm font-bold">@</h4>
-            <input
-              value={nodeData.title}
-              onChange={handleTitleChange}
-              className="w-32 bg-transparent text-sm font-bold text-white focus:outline-none truncate placeholder-slate-500"
-              onClick={(e) => e.stopPropagation()}
-            />
+          <div className="flex items-center gap-0.5 min-w-0">
+            <h4 style={{ color: config.color }} className="text-sm font-bold shrink-0">@</h4>
+            <span className="text-sm font-bold text-white truncate">
+              {nodeData.title}
+            </span>
           </div>
         </div>
 
-        {/* Toggle */}
-        <Toggle
-          checked={nodeData.enabled}
-          onChange={() => updateNodeData(id, { enabled: !nodeData.enabled })}
-        />
-
-        {/* More menu */}
-        <div className="relative">
+        {/* Action icons */}
+        <div className="flex items-center">
+          {/* Edit */}
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setShowMenu((v) => !v);
+              openModal('edit-node', id);
             }}
-            className="w-5 h-5 rounded flex items-center justify-center text-slate-600 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
+            className="w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
+            title="Edit Context"
           >
-            <MoreHorizontal size={13} />
+            <Pencil size={11} />
           </button>
 
-          {showMenu && (
-            <div
-              className="absolute right-0 top-6 z-50 w-36 rounded-xl border border-white/[0.08] bg-[#1a1d2e] shadow-2xl overflow-hidden"
-              onMouseLeave={() => setShowMenu(false)}
+          {/* More menu */}
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu((v) => !v);
+              }}
+              className="w-5 h-5 rounded flex items-center justify-center text-slate-600 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
             >
-              <button
-                onClick={() => { duplicateNode(id); setShowMenu(false); }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-slate-300 hover:bg-white/[0.06] hover:text-white transition-all"
-              >
-                <Copy size={12} /> Duplicate
-              </button>
-              {!nodeData.isMemory && (
-                <button
-                  onClick={() => { removeNode(id); setShowMenu(false); }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-400 hover:bg-red-500/[0.08] hover:text-red-300 transition-all"
-                >
-                  <Trash2 size={12} /> Delete
-                </button>
-              )}
-            </div>
-          )}
-        </div>
+              <MoreHorizontal size={13} />
+            </button>
 
-        {/* Collapse */}
-        <button
-          onClick={() => setCollapsed((v) => !v)}
-          className="w-5 h-5 rounded flex items-center justify-center text-slate-600 hover:text-slate-300 transition-all"
-        >
-          {collapsed ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
-        </button>
+            {showMenu && (
+              <div
+                className="absolute right-0 top-6 z-50 w-36 rounded-xl border border-white/[0.08] bg-[#1a1d2e] shadow-2xl overflow-hidden"
+                onMouseLeave={() => setShowMenu(false)}
+              >
+                <button
+                  onClick={() => { duplicateNode(id); setShowMenu(false); }}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-xs text-slate-300 hover:bg-white/[0.06] hover:text-white transition-all"
+                >
+                  <Copy size={12} /> Duplicate
+                </button>
+                {!nodeData.isMemory && (
+                  <button
+                    onClick={() => { removeNode(id); setShowMenu(false); }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-400 hover:bg-red-500/[0.08] hover:text-red-300 transition-all"
+                  >
+                    <Trash2 size={12} /> Delete
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Collapse */}
+          <button
+            onClick={() => setCollapsed((v) => !v)}
+            className="w-5 h-5 rounded flex items-center justify-center text-slate-600 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
+          >
+            {collapsed ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
+          </button>
+        </div>
       </div>
 
       {/* Body */}
       {!collapsed && (
         <div className="px-4 pb-4 space-y-3">
           {/* Content */}
-          <textarea
-            value={nodeData.content}
-            onChange={handleContentChange}
-            onClick={(e) => e.stopPropagation()}
-            placeholder="Add content here..."
-            rows={2}
-            className="w-full bg-transparent border-none p-0 text-xs text-slate-400 placeholder-slate-600 focus:outline-none resize-none scrollbar-thin leading-relaxed"
-          />
+          {nodeData.content ? (
+            <div className="w-full text-xs text-slate-300 leading-relaxed font-mono whitespace-pre-wrap max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
+              {nodeData.content}
+            </div>
+          ) : (
+             <div className="text-xs text-slate-500 italic">No content. Click pen icon to edit.</div>
+          )}
 
           {/* Instruction */}
-          <div className="bg-[#111318] rounded p-2 border border-[#2d3748]">
-            <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">
-              Instruction
-            </label>
-            <input
-              value={nodeData.instruction}
-              onChange={handleInstructionChange}
-              onClick={(e) => e.stopPropagation()}
-              placeholder="Extract skills & experience"
-              className="w-full bg-transparent border-none p-0 text-xs text-slate-300 focus:outline-none placeholder-slate-500"
-            />
-          </div>
+          {nodeData.instruction && (
+            <div className="bg-[#111318] rounded p-2 border border-[#2d3748]">
+              <label className="text-[10px] uppercase font-bold text-[#a855f7] mb-1 block">
+                Instruction
+              </label>
+              <div className="w-full text-xs text-slate-300 max-h-20 overflow-y-auto scrollbar-thin">
+                {nodeData.instruction}
+              </div>
+            </div>
+          )}
 
           {/* Memory badge */}
           {nodeData.isMemory && (

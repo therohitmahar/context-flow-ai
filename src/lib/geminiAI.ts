@@ -33,12 +33,31 @@ export async function generateOutput(payload: AIPayload): Promise<string> {
   const fullPrompt = parts.join('\n');
 
   try {
-    // Call our secure Vercel Serverless backend instead of Google directly
-    const response = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, fullPrompt }),
-    });
+    let response;
+
+    // LOCAL DEV FALLBACK:
+    // Vite's `npm run dev` doesn't run Vercel's `api/` folder.
+    // So in local dev mode, we'll try to call Google directly if VITE_GEMINI_API_KEY is present in .env
+    const localKey = import.meta.env.VITE_GEMINI_API_KEY;
+    
+    if (import.meta.env.DEV && localKey) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${localKey}`;
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: fullPrompt }] }],
+          generationConfig: { temperature: 0.8, maxOutputTokens: 2048 },
+        }),
+      });
+    } else {
+      // PRODUCTION (Vercel): Call our secure Vercel Serverless backend
+      response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, fullPrompt }),
+      });
+    }
 
     if (!response.ok) {
       const errBody = await response.text();
