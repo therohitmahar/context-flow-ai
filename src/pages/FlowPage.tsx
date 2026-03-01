@@ -10,11 +10,11 @@ import { useParams } from 'react-router-dom';
 
 const FlowPageInner: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  // @ts-ignore - The load method typing issue will be ignored here while store type stabilizes
   const { load, modalState } = useStore();
 
   useEffect(() => {
     load(id || undefined);
+    
   }, [load, id]);
 
   return (

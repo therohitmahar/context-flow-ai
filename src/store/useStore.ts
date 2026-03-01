@@ -116,7 +116,7 @@ interface AppState {
 
   // Persistence
   save: () => void;
-  load: () => void;
+  load: (flowId?: string) => Promise<void>;
   saveAsTemplate: (name: string) => Promise<string | null>;
 }
 
