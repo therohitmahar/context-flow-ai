@@ -1,6 +1,6 @@
 import type { AIPayload } from '../types';
 
-const GEMINI_API_KEY = 'AIzaSyDHr_XTc05hC8iZZAUdVrl2BgVz_qOXcus';
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
 
 /**
  * Call the Google Gemini API to generate content.
