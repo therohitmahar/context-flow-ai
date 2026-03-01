@@ -1,13 +1,7 @@
 import type { AIPayload } from '../types';
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
-
-/**
- * Call the Google Gemini API to generate content.
- */
 export async function generateOutput(payload: AIPayload): Promise<string> {
-  const model = payload.model || 'gemini-2.0-flash';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+  const model = payload.model || 'gemini-2.5-flash';
 
   // Build the prompt from the payload
   const parts: string[] = [];
@@ -39,20 +33,11 @@ export async function generateOutput(payload: AIPayload): Promise<string> {
   const fullPrompt = parts.join('\n');
 
   try {
-    const response = await fetch(url, {
+    // Call our secure Vercel Serverless backend instead of Google directly
+    const response = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: fullPrompt }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.8,
-          maxOutputTokens: 2048,
-        },
-      }),
+      body: JSON.stringify({ model, fullPrompt }),
     });
 
     if (!response.ok) {
