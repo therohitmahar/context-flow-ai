@@ -64,7 +64,7 @@ const Canvas: React.FC = () => {
   );
 
   return (
-    <div ref={reactFlowWrapper} className="flex-1 relative bg-[#0d0e14]">
+    <div ref={reactFlowWrapper} className="flex-1 relative bg-[#0d1117]">
       <ReactFlow
         nodes={filteredNodes}
         edges={edges}
@@ -80,26 +80,25 @@ const Canvas: React.FC = () => {
         maxZoom={2}
         defaultEdgeOptions={{
           animated: true,
-          style: { stroke: '#6366f1', strokeWidth: 2 },
+          style: { stroke: '#4a5568', strokeWidth: 2 },
         }}
         proOptions={{ hideAttribution: true }}
       >
         <Background
           variant={BackgroundVariant.Dots}
-          gap={20}
+          gap={30}
           size={1}
-          color="#1e2235"
+          color="#2d3748"
         />
 
-        {/* <Controls
+        <Controls
           className="!bottom-4 !left-4"
           style={{
-            background: 'rgba(20, 22, 32, 0.9)',
-            border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: '12px',
-            backdropFilter: 'blur(8px)',
+            background: '#1a202c',
+            border: '1px solid #2d3748',
+            borderRadius: '8px',
           }}
-        /> */}
+        />
 
         <MiniMap
           className="!bottom-4 !right-4"
@@ -116,9 +115,9 @@ const Canvas: React.FC = () => {
             return colors[data.contentType ?? 'text'] ?? '#6366f1';
           }}
           style={{
-            background: 'rgba(13, 14, 20, 0.9)',
-            border: '1px solid rgba(255,255,255,0.06)',
-            borderRadius: '12px',
+            background: '#0d1117',
+            border: '1px solid #2d3748',
+            borderRadius: '8px',
           }}
         />
 

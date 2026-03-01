@@ -81,12 +81,7 @@ export interface ContextMenu {
 }
 
 export const MODELS = [
-  { id: 'gpt-4o', label: 'GPT-4o', color: '#10b981' },
-  { id: 'gpt-4-turbo', label: 'GPT-4 Turbo', color: '#6366f1' },
-  { id: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', color: '#8b5cf6' },
-  { id: 'claude-3-opus', label: 'Claude 3 Opus', color: '#f59e0b' },
-  { id: 'claude-3-sonnet', label: 'Claude 3 Sonnet', color: '#f97316' },
-  { id: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro', color: '#06b6d4' },
+  { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', color: '#4285f4' },
 ] as const;
 
 export const SAVED_CONTEXTS: SavedContext[] = [

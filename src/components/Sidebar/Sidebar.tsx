@@ -6,7 +6,6 @@ import {
   File,
   Zap,
   GripVertical,
-  Plus,
   User,
   Volume2,
   Code2,
@@ -27,17 +26,14 @@ const LibraryButton: React.FC<LibraryButtonProps> = ({ label, icon, onClick, col
   <button
     onClick={onClick}
     className={clsx(
-      'flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl border transition-all group hover:scale-[1.03] active:scale-[0.97]',
-      'bg-white/[0.03] border-white/[0.07] hover:bg-white/[0.07] hover:border-white/[0.12]'
+      'flex flex-col items-center justify-center p-3 rounded-lg border transition-all group',
+      'bg-[#1a202c] border-[#2d3748] hover:border-[#135bec]/50 hover:bg-[#135bec]/5'
     )}
   >
-    <div
-      className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform"
-      style={{ background: color + '20', color }}
-    >
+    <span style={{ color }} className="mb-1 group-hover:scale-110 transition-transform">
       {icon}
-    </div>
-    <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200 transition-colors">
+    </span>
+    <span className="text-xs font-medium text-slate-300">
       {label}
     </span>
   </button>
@@ -51,29 +47,29 @@ const savedContextIcons: Record<string, React.ReactNode> = {
 };
 
 const savedContextColors: Record<string, string> = {
-  'saved-resume': '#6366f1',
-  'saved-profile': '#10b981',
+  'saved-resume': '#3b82f6',
+  'saved-profile': '#a855f7',
   'saved-tone': '#f59e0b',
-  'saved-guidelines': '#06b6d4',
+  'saved-guidelines': '#22c55e',
 };
 
 const Sidebar: React.FC = () => {
   const { addContextNode, addSavedContext } = useStore();
 
   const libraryItems = [
-    { label: 'Text', icon: <FileText size={16} />, type: 'text' as ContentType, color: '#6366f1' },
-    { label: 'URL', icon: <Link2 size={16} />, type: 'url' as ContentType, color: '#a78bfa' },
-    { label: 'File', icon: <File size={16} />, type: 'file' as ContentType, color: '#f59e0b' },
-    { label: 'API', icon: <Zap size={16} />, type: 'api' as ContentType, color: '#10b981' },
+    { label: 'Text', icon: <FileText size={18} />, type: 'text' as ContentType, color: '#135bec' },
+    { label: 'URL', icon: <Link2 size={18} />, type: 'url' as ContentType, color: '#a855f7' },
+    { label: 'File', icon: <File size={18} />, type: 'file' as ContentType, color: '#f59e0b' },
+    { label: 'API', icon: <Zap size={18} />, type: 'api' as ContentType, color: '#22c55e' },
   ];
 
   return (
-    <aside className="w-[156px] shrink-0 flex flex-col border-r border-white/[0.06] bg-[#0d0e14] overflow-hidden">
+    <aside className="w-64 shrink-0 flex flex-col border-r border-[#2d3748] bg-[#111318] z-10 overflow-hidden">
       {/* Library section */}
-      <div className="p-3">
-        <p className="text-[10px] font-semibold tracking-widest uppercase text-slate-600 mb-2.5 px-0.5">
+      <div className="p-4 border-b border-[#2d3748]">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">
           Library
-        </p>
+        </h3>
         <div className="grid grid-cols-2 gap-2">
           {libraryItems.map((item) => (
             <LibraryButton
@@ -88,69 +84,58 @@ const Sidebar: React.FC = () => {
         </div>
       </div>
 
-      <div className="mx-3 border-t border-white/[0.05]" />
-
       {/* Saved Contexts */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-3">
-        <p className="text-[10px] font-semibold tracking-widest uppercase text-slate-600 mb-2.5 px-0.5">
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
           Saved Contexts
-        </p>
-        <div className="flex flex-col gap-1.5">
-          {SAVED_CONTEXTS.map((ctx) => (
-            <button
-              key={ctx.id}
-              onClick={() => addSavedContext(ctx)}
-              className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.06] hover:border-white/[0.1] transition-all group text-left w-full"
-              title={`Add "${ctx.title}" to canvas`}
-            >
-              {/* Drag handle */}
-              <GripVertical
-                size={12}
-                className="text-slate-700 group-hover:text-slate-500 shrink-0 transition-colors"
-              />
-
-              {/* Icon */}
-              <div
-                className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-                style={{
-                  background: (savedContextColors[ctx.id] ?? '#6366f1') + '20',
-                  color: savedContextColors[ctx.id] ?? '#6366f1',
-                }}
+        </h3>
+        <div className="space-y-2">
+          {SAVED_CONTEXTS.map((ctx) => {
+            const ctxColor = savedContextColors[ctx.id] ?? '#6366f1';
+            return (
+              <button
+                key={ctx.id}
+                onClick={() => addSavedContext(ctx)}
+                className="flex items-center gap-3 w-full p-3 rounded-lg bg-[#1a202c] border border-[#2d3748] cursor-grab active:cursor-grabbing hover:border-[#135bec]/50 transition-colors shadow-sm text-left group"
+                title={`Add "${ctx.title}" to canvas`}
               >
-                {savedContextIcons[ctx.id] ?? <FileText size={12} />}
-              </div>
+                {/* Icon */}
+                <div
+                  className="w-8 h-8 rounded flex items-center justify-center shrink-0"
+                  style={{ background: ctxColor + '1a', color: ctxColor }}
+                >
+                  {savedContextIcons[ctx.id] ?? <FileText size={14} />}
+                </div>
 
-              {/* Text */}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-slate-300 group-hover:text-white truncate transition-colors leading-tight">
-                  {ctx.title}
-                </p>
-                <p className="text-[10px] text-slate-600 truncate leading-tight mt-0.5">
-                  {ctx.subtitle}
-                </p>
-              </div>
+                {/* Text */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-white truncate">
+                    {ctx.title}
+                  </p>
+                  <p className="text-xs text-slate-400 truncate">
+                    {ctx.subtitle}
+                  </p>
+                </div>
 
-              {/* Plus on hover */}
-              <Plus
-                size={12}
-                className="text-slate-700 group-hover:text-indigo-400 shrink-0 transition-colors"
-              />
-            </button>
-          ))}
+                {/* Drag handle */}
+                <GripVertical
+                  size={14}
+                  className="text-slate-600 group-hover:text-slate-400 shrink-0 transition-colors"
+                />
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Storage bar */}
-      <div className="p-3 border-t border-white/[0.05]">
-        <div className="flex justify-between items-center mb-1.5">
-          <span className="text-[10px] text-slate-600">Storage Used</span>
-          <span className="text-[10px] font-medium text-slate-400">45%</span>
+      <div className="p-4 border-t border-[#2d3748] bg-[#111318]">
+        <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+          <span>Storage Used</span>
+          <span>45%</span>
         </div>
-        <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all"
-            style={{ width: '45%' }}
-          />
+        <div className="h-1.5 w-full bg-slate-700 rounded-full overflow-hidden">
+          <div className="h-full bg-[#135bec] w-[45%] rounded-full" />
         </div>
       </div>
     </aside>

@@ -116,43 +116,35 @@ const ContextNode: React.FC<NodeProps> = ({ id, data, selected }) => {
     <div
       onContextMenu={handleContextMenu}
       className={clsx(
-        'w-[220px] rounded-2xl border transition-all duration-200',
-        'bg-[#141620] shadow-xl',
+        'w-[260px] rounded-xl border transition-all duration-200 group',
+        'bg-[#1a202c] shadow-xl',
         nodeData.enabled ? '' : 'node-disabled',
         selected
           ? 'border-indigo-500/60 shadow-indigo-500/20'
-          : 'border-white/[0.08] hover:border-white/[0.14]'
+          : 'border-[#2d3748] hover:border-[#4a5568]'
       )}
-      style={{
-        boxShadow: selected
-          ? `0 0 0 1px ${config.color}40, 0 4px 24px ${config.color}15`
-          : '0 4px 24px rgba(0,0,0,0.3)',
-      }}
     >
       {/* Top color bar */}
       <div
-        className="h-0.5 rounded-t-2xl"
-        style={{ background: `linear-gradient(90deg, ${config.color}, transparent)` }}
+        className="h-1.5 w-full rounded-t-xl"
+        style={{ background: config.color }}
       />
 
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 pt-2.5 pb-2">
-        {/* Type icon */}
-        <div
-          className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
-          style={{ background: config.color + '20', color: config.color }}
-        >
-          {config.icon}
-        </div>
+      <div className="flex items-start justify-between px-4 pt-4 pb-2">
+        <div className="flex items-center gap-2">
+          {/* Type icon */}
+          <div style={{ color: config.color }}>
+            {config.icon}
+          </div>
 
-        {/* @Title */}
-        <div className="flex-1 min-w-0">
+          {/* @Title */}
           <div className="flex items-center gap-0.5">
-            <span style={{ color: config.color }} className="text-xs font-bold">@</span>
+            <h4 style={{ color: config.color }} className="text-sm font-bold">@</h4>
             <input
               value={nodeData.title}
               onChange={handleTitleChange}
-              className="flex-1 bg-transparent text-sm font-semibold text-white focus:outline-none min-w-0 truncate"
+              className="w-32 bg-transparent text-sm font-bold text-white focus:outline-none truncate placeholder-slate-500"
               onClick={(e) => e.stopPropagation()}
             />
           </div>
@@ -210,28 +202,28 @@ const ContextNode: React.FC<NodeProps> = ({ id, data, selected }) => {
 
       {/* Body */}
       {!collapsed && (
-        <div className="px-3 pb-3 space-y-2">
+        <div className="px-4 pb-4 space-y-3">
           {/* Content */}
           <textarea
             value={nodeData.content}
             onChange={handleContentChange}
             onClick={(e) => e.stopPropagation()}
             placeholder="Add content here..."
-            rows={3}
-            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg px-2.5 py-2 text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-white/[0.14] resize-none scrollbar-thin leading-relaxed"
+            rows={2}
+            className="w-full bg-transparent border-none p-0 text-xs text-slate-400 placeholder-slate-600 focus:outline-none resize-none scrollbar-thin leading-relaxed"
           />
 
           {/* Instruction */}
-          <div>
-            <p className="text-[9px] font-semibold tracking-widest uppercase text-slate-600 mb-1">
+          <div className="bg-[#111318] rounded p-2 border border-[#2d3748]">
+            <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">
               Instruction
-            </p>
+            </label>
             <input
               value={nodeData.instruction}
               onChange={handleInstructionChange}
               onClick={(e) => e.stopPropagation()}
-              placeholder="Add instruction..."
-              className="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg px-2.5 py-1.5 text-xs text-slate-400 placeholder:text-slate-600 focus:outline-none focus:border-white/[0.14]"
+              placeholder="Extract skills & experience"
+              className="w-full bg-transparent border-none p-0 text-xs text-slate-300 focus:outline-none placeholder-slate-500"
             />
           </div>
 
@@ -254,9 +246,8 @@ const ContextNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           width: 12,
           height: 12,
           background: config.color,
-          border: '2px solid ' + config.color + '80',
+          border: '2px solid #1a202c',
           right: -6,
-          boxShadow: `0 0 8px ${config.color}60`,
         }}
       />
     </div>

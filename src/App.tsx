@@ -14,7 +14,7 @@ const AppInner: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#0d0e14]">
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#101622]">
 
       <TopBar />
       <div className="flex flex-1 overflow-hidden">

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Context Stacker Workspace</title>
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect" />
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <!-- Tailwind Config -->
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#135bec",
+            "background-light": "#f6f6f8",
+            "background-dark": "#101622",
+            "card-dark": "#1a202c",
+            "border-dark": "#2d3748",
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    /* Custom scrollbar for webkit */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #4a5568;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #718096;
+    }
+
+    /* Node connector line simulation */
+    .connector-path {
+      stroke-dasharray: 10;
+      animation: dash 30s linear infinite;
+    }
+
+    /* Grid background pattern */
+    .grid-pattern {
+      background-image: radial-gradient(#2d3748 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+  </style>
+</head>
+
+<body
+  class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display overflow-hidden h-screen flex flex-col">
+  <!-- Top Navigation -->
+  <header
+    class="flex flex-shrink-0 items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-border-dark px-6 py-3 bg-white dark:bg-[#111318] z-20">
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-3 text-slate-900 dark:text-white">
+        <div class="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
+          <span class="material-symbols-outlined text-[20px]">layers</span>
+        </div>
+        <h2 class="text-lg font-bold leading-tight tracking-[-0.015em]">Context Stacker</h2>
+      </div>
+      <!-- Breadcrumbs / Project Name -->
+      <div class="hidden md:flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+        <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+        <span class="text-slate-900 dark:text-white font-medium">Cover Letter Generator</span>
+        <span
+          class="px-2 py-0.5 rounded text-xs bg-green-500/10 text-green-500 border border-green-500/20">Auto-Saved</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <label class="hidden lg:flex relative group">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <span class="material-symbols-outlined text-slate-400 text-[20px]">search</span>
+        </div>
+        <input
+          class="block w-full rounded-lg border-none bg-slate-100 dark:bg-card-dark py-2 pl-10 pr-3 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary text-slate-900 dark:text-white transition-all w-64"
+          placeholder="Search nodes..." type="text" />
+      </label>
+      <div class="flex items-center gap-2">
+        <button
+          class="flex items-center justify-center rounded-lg size-9 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
+          <span class="material-symbols-outlined text-[20px]">history</span>
+        </button>
+        <button
+          class="flex items-center justify-center rounded-lg size-9 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors">
+          <span class="material-symbols-outlined text-[20px]">settings</span>
+        </button>
+        <div class="h-6 w-px bg-slate-200 dark:bg-border-dark mx-1"></div>
+        <button
+          class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-blue-600 text-white text-sm font-semibold rounded-lg shadow-lg shadow-primary/20 transition-all">
+          <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+          <span>Run Flow</span>
+        </button>
+        <div class="ml-2 size-9 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 p-[2px]"
+          data-alt="User Avatar Gradient">
+          <div
+            class="h-full w-full rounded-full bg-white dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+            <img alt="User Profile" class="h-full w-full object-cover"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtkhcIkByDzmmAicuQAgnCCit8cvYr2GbsoZUhovAW-Rd59NUcxP0nNE7rTUA50LVfFq9867y6JsPu4ML061Xe2uwg6QhxoQgJRA6DHyB34EU9ZR2bK5kunwpZt-Hk_jnWM0KApq8PUL6P_TZ7Y8iRUjgCGmlSP2yoVwdqipummFQ-6-A3c5Dtja1JJ0QjxjSjKe3cLJpENxMMwUD2VF4Jyny4Q3hRllUapOjyfYUXgYGRCCbaChPKCOiDOaBlqqSlaVyIk5qaG0Uh" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="flex flex-1 overflow-hidden relative">
+    <!-- Left Sidebar: Context Library -->
+    <aside
+      class="w-64 flex flex-col border-r border-slate-200 dark:border-border-dark bg-white dark:bg-[#111318] z-10 flex-shrink-0">
+      <div class="p-4 border-b border-slate-200 dark:border-border-dark">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Library</h3>
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            class="flex flex-col items-center justify-center p-3 rounded-lg bg-slate-50 dark:bg-card-dark border border-slate-200 dark:border-border-dark hover:border-primary/50 hover:bg-primary/5 transition-all group">
+            <span
+              class="material-symbols-outlined text-primary mb-1 group-hover:scale-110 transition-transform">note_add</span>
+            <span class="text-xs font-medium text-slate-700 dark:text-slate-300">Text</span>
+          </button>
+          <button
+            class="flex flex-col items-center justify-center p-3 rounded-lg bg-slate-50 dark:bg-card-dark border border-slate-200 dark:border-border-dark hover:border-primary/50 hover:bg-primary/5 transition-all group">
+            <span
+              class="material-symbols-outlined text-purple-500 mb-1 group-hover:scale-110 transition-transform">link</span>
+            <span class="text-xs font-medium text-slate-700 dark:text-slate-300">URL</span>
+          </button>
+          <button
+            class="flex flex-col items-center justify-center p-3 rounded-lg bg-slate-50 dark:bg-card-dark border border-slate-200 dark:border-border-dark hover:border-primary/50 hover:bg-primary/5 transition-all group">
+            <span
+              class="material-symbols-outlined text-orange-500 mb-1 group-hover:scale-110 transition-transform">upload_file</span>
+            <span class="text-xs font-medium text-slate-700 dark:text-slate-300">File</span>
+          </button>
+          <button
+            class="flex flex-col items-center justify-center p-3 rounded-lg bg-slate-50 dark:bg-card-dark border border-slate-200 dark:border-border-dark hover:border-primary/50 hover:bg-primary/5 transition-all group">
+            <span
+              class="material-symbols-outlined text-green-500 mb-1 group-hover:scale-110 transition-transform">api</span>
+            <span class="text-xs font-medium text-slate-700 dark:text-slate-300">API</span>
+          </button>
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto p-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">Saved Contexts
+        </h3>
+        <div class="space-y-2">
+          <!-- Draggable Item -->
+          <div
+            class="flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark cursor-grab active:cursor-grabbing hover:border-primary/50 transition-colors shadow-sm">
+            <div class="size-8 rounded bg-blue-500/10 flex items-center justify-center text-blue-500">
+              <span class="material-symbols-outlined text-[20px]">description</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-slate-900 dark:text-white truncate">My Resume 2023</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 truncate">PDF • 2 pages</p>
+            </div>
+            <span class="material-symbols-outlined text-slate-400 text-[18px]">drag_indicator</span>
+          </div>
+          <div
+            class="flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark cursor-grab active:cursor-grabbing hover:border-primary/50 transition-colors shadow-sm">
+            <div class="size-8 rounded bg-purple-500/10 flex items-center justify-center text-purple-500">
+              <span class="material-symbols-outlined text-[20px]">person</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-slate-900 dark:text-white truncate">User Profile</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 truncate">Core Values</p>
+            </div>
+            <span class="material-symbols-outlined text-slate-400 text-[18px]">drag_indicator</span>
+          </div>
+          <div
+            class="flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark cursor-grab active:cursor-grabbing hover:border-primary/50 transition-colors shadow-sm">
+            <div class="size-8 rounded bg-orange-500/10 flex items-center justify-center text-orange-500">
+              <span class="material-symbols-outlined text-[20px]">tune</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-slate-900 dark:text-white truncate">Tone: Professional</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 truncate">System Prompt</p>
+            </div>
+            <span class="material-symbols-outlined text-slate-400 text-[18px]">drag_indicator</span>
+          </div>
+          <div
+            class="flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark cursor-grab active:cursor-grabbing hover:border-primary/50 transition-colors shadow-sm">
+            <div class="size-8 rounded bg-green-500/10 flex items-center justify-center text-green-500">
+              <span class="material-symbols-outlined text-[20px]">code</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-slate-900 dark:text-white truncate">React Guidelines</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400 truncate">Tech Stack</p>
+            </div>
+            <span class="material-symbols-outlined text-slate-400 text-[18px]">drag_indicator</span>
+          </div>
+        </div>
+      </div>
+      <div class="p-4 border-t border-slate-200 dark:border-border-dark bg-slate-50 dark:bg-[#111318]">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <span>Storage Used</span>
+          <span>45%</span>
+        </div>
+        <div class="mt-2 h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+          <div class="h-full bg-primary w-[45%] rounded-full"></div>
+        </div>
+      </div>
+    </aside>
+    <!-- Main Canvas Area -->
+    <main
+      class="flex-1 relative overflow-hidden bg-slate-100 dark:bg-[#0d1117] grid-pattern cursor-grab active:cursor-grabbing">
+      <!-- Floating Controls -->
+      <div
+        class="absolute bottom-6 left-6 flex bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-lg shadow-lg p-1 z-30">
+        <button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-400"
+          title="Zoom In">
+          <span class="material-symbols-outlined text-[20px]">add</span>
+        </button>
+        <div class="w-px bg-slate-200 dark:bg-border-dark mx-1 my-1"></div>
+        <button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-400"
+          title="Zoom Out">
+          <span class="material-symbols-outlined text-[20px]">remove</span>
+        </button>
+        <div class="w-px bg-slate-200 dark:bg-border-dark mx-1 my-1"></div>
+        <button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-400"
+          title="Fit to Screen">
+          <span class="material-symbols-outlined text-[20px]">center_focus_strong</span>
+        </button>
+      </div>
+      <!-- SVG Connector Layer (Simulated Lines) -->
+      <svg class="absolute inset-0 w-full h-full pointer-events-none z-0">
+        <!-- Line from Resume to Composer -->
+        <path class="dark:stroke-slate-600" d="M 320 180 C 450 180, 450 350, 580 350" fill="none" stroke="#4a5568"
+          stroke-width="2"></path>
+        <!-- Line from JobDescription to Composer -->
+        <path class="dark:stroke-slate-600" d="M 320 380 C 450 380, 450 380, 580 380" fill="none" stroke="#4a5568"
+          stroke-width="2"></path>
+        <!-- Line from PersonalNotes to Composer -->
+        <path class="dark:stroke-slate-600" d="M 320 580 C 450 580, 450 410, 580 410" fill="none" stroke="#4a5568"
+          stroke-width="2"></path>
+        <!-- Line from Composer to Output -->
+        <path d="M 980 380 C 1050 380, 1050 380, 1120 380" fill="none" stroke="#135bec" stroke-dasharray="5,5"
+          stroke-width="3"></path>
+      </svg>
+      <!-- Node 1: Resume (Top Left) -->
+      <div
+        class="absolute top-[100px] left-[60px] w-[260px] bg-white dark:bg-card-dark rounded-xl shadow-xl border border-slate-200 dark:border-border-dark z-10 group">
+        <div class="h-1.5 w-full bg-blue-500 rounded-t-xl"></div>
+        <div class="p-4">
+          <div class="flex justify-between items-start mb-2">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-blue-500 text-[20px]">description</span>
+              <h4 class="font-bold text-slate-900 dark:text-white">@Resume</h4>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input checked="" class="sr-only peer" type="checkbox" value="" />
+              <div
+                class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600">
+              </div>
+            </label>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 line-clamp-2">Senior Developer resume with 5 years
+            experience in React, Node.js...</p>
+          <div class="bg-slate-50 dark:bg-[#111318] rounded p-2 border border-slate-100 dark:border-border-dark">
+            <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Instruction</label>
+            <input
+              class="w-full bg-transparent border-none p-0 text-xs text-slate-700 dark:text-slate-300 focus:ring-0 placeholder-slate-500"
+              type="text" value="Extract skills &amp; experience" />
+          </div>
+        </div>
+        <!-- Connector Dot -->
+        <div
+          class="absolute top-1/2 -right-1.5 w-3 h-3 bg-blue-500 rounded-full border-2 border-white dark:border-card-dark">
+        </div>
+      </div>
+      <!-- Node 2: Job Description (Middle Left) -->
+      <div
+        class="absolute top-[300px] left-[60px] w-[260px] bg-white dark:bg-card-dark rounded-xl shadow-xl border border-slate-200 dark:border-border-dark z-10">
+        <div class="h-1.5 w-full bg-purple-500 rounded-t-xl"></div>
+        <div class="p-4">
+          <div class="flex justify-between items-start mb-2">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-purple-500 text-[20px]">link</span>
+              <h4 class="font-bold text-slate-900 dark:text-white">@JobDescription</h4>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input checked="" class="sr-only peer" type="checkbox" value="" />
+              <div
+                class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-purple-600">
+              </div>
+            </label>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 line-clamp-2">
+            https://company.com/careers/senior-frontend-engineer...</p>
+          <div class="bg-slate-50 dark:bg-[#111318] rounded p-2 border border-slate-100 dark:border-border-dark">
+            <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Instruction</label>
+            <input
+              class="w-full bg-transparent border-none p-0 text-xs text-slate-700 dark:text-slate-300 focus:ring-0 placeholder-slate-500"
+              type="text" value="Identify key requirements" />
+          </div>
+        </div>
+        <!-- Connector Dot -->
+        <div
+          class="absolute top-1/2 -right-1.5 w-3 h-3 bg-purple-500 rounded-full border-2 border-white dark:border-card-dark">
+        </div>
+      </div>
+      <!-- Node 3: Personal Notes (Bottom Left) -->
+      <div
+        class="absolute top-[500px] left-[60px] w-[260px] bg-white dark:bg-card-dark rounded-xl shadow-xl border border-slate-200 dark:border-border-dark z-10 opacity-75 hover:opacity-100 transition-opacity">
+        <div class="h-1.5 w-full bg-orange-500 rounded-t-xl"></div>
+        <div class="p-4">
+          <div class="flex justify-between items-start mb-2">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-orange-500 text-[20px]">edit_note</span>
+              <h4 class="font-bold text-slate-900 dark:text-white">@PersonalNotes</h4>
+            </div>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input class="sr-only peer" type="checkbox" value="" />
+              <div
+                class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-orange-600">
+              </div>
+            </label>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 line-clamp-2">Remember to mention the side project
+            about AI visualizers...</p>
+          <div class="bg-slate-50 dark:bg-[#111318] rounded p-2 border border-slate-100 dark:border-border-dark">
+            <label class="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Instruction</label>
+            <input
+              class="w-full bg-transparent border-none p-0 text-xs text-slate-700 dark:text-slate-300 focus:ring-0 placeholder-slate-500"
+              type="text" value="Add specific details" />
+          </div>
+        </div>
+        <!-- Connector Dot -->
+        <div
+          class="absolute top-1/2 -right-1.5 w-3 h-3 bg-orange-500 rounded-full border-2 border-white dark:border-card-dark">
+        </div>
+      </div>
+      <!-- Central Node: Prompt Composer -->
+      <div
+        class="absolute top-[200px] left-[580px] w-[400px] bg-white dark:bg-card-dark rounded-xl shadow-2xl border-2 border-primary/50 dark:border-primary/50 z-20">
+        <div
+          class="flex items-center justify-between p-3 border-b border-slate-100 dark:border-border-dark bg-slate-50 dark:bg-slate-800/50 rounded-t-xl">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[20px]">edit_square</span>
+            <h3 class="font-bold text-slate-900 dark:text-white">Prompt Composer</h3>
+          </div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">
+            GPT-4o</div>
+        </div>
+        <div class="p-4">
+          <div
+            class="relative w-full h-40 bg-slate-50 dark:bg-[#111318] rounded-lg p-3 text-sm text-slate-700 dark:text-slate-200 font-mono border border-slate-200 dark:border-border-dark focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary transition-all">
+            <p>Write a professional cover letter using <span
+                class="text-blue-500 font-bold bg-blue-500/10 px-1 rounded cursor-pointer hover:bg-blue-500/20">@Resume</span>
+              and focus on skills required in <span
+                class="text-purple-500 font-bold bg-purple-500/10 px-1 rounded cursor-pointer hover:bg-purple-500/20">@JobDescription</span>.
+            </p>
+            <p class="mt-2">Ensure the tone is enthusiastic but professional.</p>
+            <span class="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle"></span>
+          </div>
+          <div class="mt-3 flex justify-between items-center">
+            <div class="flex gap-2">
+              <button
+                class="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-primary transition-colors">
+                <span class="material-symbols-outlined text-[18px]">add_circle</span>
+              </button>
+              <button
+                class="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-primary transition-colors">
+                <span class="material-symbols-outlined text-[18px]">mic</span>
+              </button>
+            </div>
+            <div class="text-xs text-slate-400">
+              284 tokens
+            </div>
+          </div>
+        </div>
+        <!-- Connector Dots -->
+        <div
+          class="absolute top-1/2 -left-1.5 w-3 h-3 bg-slate-400 dark:bg-slate-600 rounded-full border-2 border-white dark:border-card-dark">
+        </div>
+        <div
+          class="absolute top-1/2 -right-1.5 w-3 h-3 bg-primary rounded-full border-2 border-white dark:border-card-dark shadow-[0_0_8px_rgba(19,91,236,0.8)]">
+        </div>
+      </div>
+      <!-- Right Node: Generated Output -->
+      <div
+        class="absolute top-[150px] left-[1120px] w-[380px] h-[500px] bg-white dark:bg-card-dark rounded-xl shadow-xl border border-slate-200 dark:border-border-dark z-10 flex flex-col">
+        <div class="flex items-center justify-between p-4 border-b border-slate-100 dark:border-border-dark">
+          <div class="flex items-center gap-2">
+            <div class="size-6 rounded bg-green-500 flex items-center justify-center text-white">
+              <span class="material-symbols-outlined text-[14px]">auto_awesome</span>
+            </div>
+            <h3 class="font-bold text-slate-900 dark:text-white">Generated Output</h3>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="flex h-2 w-2 rounded-full bg-blue-500"></span>
+            <span class="flex h-2 w-2 rounded-full bg-purple-500"></span>
+          </div>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-[#111318]">
+          <div class="prose prose-sm dark:prose-invert max-w-none">
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              Dear Hiring Manager,<br /><br />
+              I am writing to express my enthusiastic interest in the Senior Frontend Engineer position at TechCorp.
+              With over 5 years of experience architecting scalable web applications using React and Node.js...
+            </p>
+            <div class="my-4 h-px bg-slate-200 dark:bg-border-dark w-full"></div>
+            <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              My experience at PreviousCo aligns perfectly with your requirement for high-performance UI optimization. I
+              successfully reduced load times by 40%...
+            </p>
+            <div class="h-24"></div> <!-- Spacer -->
+          </div>
+        </div>
+        <div class="p-4 border-t border-slate-200 dark:border-border-dark bg-white dark:bg-card-dark rounded-b-xl">
+          <div class="flex gap-3">
+            <button
+              class="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-white rounded-lg text-sm font-medium transition-colors">
+              <span class="material-symbols-outlined text-[18px]">refresh</span>
+              Regenerate
+            </button>
+            <button
+              class="flex items-center justify-center py-2 px-3 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
+              <span class="material-symbols-outlined text-[18px]">content_copy</span>
+            </button>
+            <button
+              class="flex items-center justify-center py-2 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-white rounded-lg transition-colors">
+              <span class="material-symbols-outlined text-[18px]">thumb_up</span>
+            </button>
+          </div>
+        </div>
+        <!-- Connector Dot -->
+        <div
+          class="absolute top-1/2 -left-1.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-card-dark shadow-[0_0_8px_rgba(34,197,94,0.6)]">
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+
+</html>

@@ -49,34 +49,38 @@ const OutputPanel: React.FC = () => {
   return (
     <div
       className={clsx(
-        'w-[320px] shrink-0 flex flex-col border-l border-white/[0.06] bg-[#0f1018]',
+        'w-[380px] shrink-0 flex flex-col shadow-2xl z-40 h-full border-l border-[#2d3748] bg-[#1a202c]',
         'transition-all duration-300 fade-in-up'
       )}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06]">
-        <div className="w-6 h-6 rounded-md bg-emerald-500/20 flex items-center justify-center">
-          <Sparkles size={12} className="text-emerald-400" />
-        </div>
-        <span className="text-sm font-semibold text-white flex-1">Generated Output</span>
-
-        {/* Dots */}
-        <div className="flex gap-1.5">
-          {['bg-red-500', 'bg-amber-500', 'bg-emerald-500'].map((c, i) => (
-            <span key={i} className={`w-2.5 h-2.5 rounded-full ${c} opacity-70`} />
-          ))}
+      <div className="flex items-center justify-between px-4 py-4 border-b border-[#2d3748]">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded bg-emerald-500 flex items-center justify-center text-white">
+            <Sparkles size={14} />
+          </div>
+          <h3 className="font-bold text-white text-sm">Generated Output</h3>
         </div>
 
-        <button
-          onClick={() => setOutputPanelOpen(false)}
-          className="w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all ml-1"
-        >
-          <X size={12} />
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Dots */}
+          <div className="flex items-center gap-1.5">
+            <span className="flex h-2 w-2 rounded-full bg-blue-500" />
+            <span className="flex h-2 w-2 rounded-full bg-purple-500" />
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+          </div>
+
+          <button
+            onClick={() => setOutputPanelOpen(false)}
+            className="w-6 h-6 rounded hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-all ml-2"
+          >
+            <X size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin px-4 py-4">
+      <div className="flex-1 overflow-y-auto scrollbar-thin px-4 py-4 bg-[#111318]">
         {isGenerating ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2 mb-4">
@@ -189,70 +193,65 @@ const OutputPanel: React.FC = () => {
 
       {/* Footer actions */}
       {generatedOutput && !isGenerating && (
-        <div className="border-t border-white/[0.06] p-3 space-y-2">
+        <div className="border-t border-[#2d3748] p-4 bg-[#1a202c]">
           {/* Version history */}
           {outputHistory.length > 1 && (
-            <button
-              onClick={() => setHistoryOpen((v) => !v)}
-              className="flex items-center gap-2 w-full px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] transition-all text-xs text-slate-400"
-            >
-              <Clock size={12} />
-              <span>Version History ({outputHistory.length})</span>
-              <div className="ml-auto">
-                {historyOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-              </div>
-            </button>
-          )}
-
-          {historyOpen && (
-            <div className="space-y-1 max-h-32 overflow-y-auto scrollbar-thin">
-              {outputHistory.slice(1).map((out, i) => (
-                <div
-                  key={out.id}
-                  className="px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04] text-xs text-slate-500 flex items-center gap-2"
-                >
-                  <Clock size={10} />
-                  <span>v{outputHistory.length - i - 1}</span>
-                  <span className="ml-auto">
-                    {new Date(out.timestamp).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
+            <div className="mb-3">
+              <button
+                onClick={() => setHistoryOpen((v) => !v)}
+                className="flex items-center gap-2 w-full px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-all text-xs text-slate-400"
+              >
+                <Clock size={12} />
+                <span>Version History ({outputHistory.length})</span>
+                <div className="ml-auto">
+                  {historyOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 </div>
-              ))}
+              </button>
+
+              {historyOpen && (
+                <div className="mt-2 space-y-1 max-h-32 overflow-y-auto scrollbar-thin">
+                  {outputHistory.slice(1).map((out, i) => (
+                    <div
+                      key={out.id}
+                      className="px-3 py-2 rounded-lg bg-[#111318] border border-[#2d3748] text-xs text-slate-400 flex items-center gap-2"
+                    >
+                      <Clock size={10} />
+                      <span>v{outputHistory.length - i - 1}</span>
+                      <span className="ml-auto">
+                        {new Date(out.timestamp).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          <div className="flex gap-2">
+          <div className="flex gap-3">
+            <button
+              onClick={regenerate}
+              className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              <RefreshCw size={16} /> Regenerate
+            </button>
+
             <button
               onClick={handleEdit}
-              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-slate-300 hover:bg-white/[0.08] hover:text-white transition-all"
+              className="flex items-center justify-center py-2 px-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors"
+              title="Edit Output"
             >
-              <Edit3 size={12} /> Edit
+              <Edit3 size={16} />
             </button>
 
             <button
               onClick={handleCopy}
-              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs text-slate-300 hover:bg-white/[0.08] hover:text-white transition-all"
+              className="flex items-center justify-center py-2 px-3 bg-[#135bec] hover:bg-blue-600 text-white rounded-lg transition-colors shadow-lg shadow-blue-900/20"
+              title="Copy to Clipboard"
             >
-              {copied ? (
-                <>
-                  <CheckCircle size={12} className="text-emerald-400" />
-                  <span className="text-emerald-400">Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Copy size={12} /> Copy
-                </>
-              )}
-            </button>
-
-            <button
-              onClick={regenerate}
-              className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg bg-indigo-600/90 border border-indigo-500/30 text-xs text-white hover:bg-indigo-500 transition-all"
-            >
-              <RefreshCw size={12} /> Regen
+              {copied ? <CheckCircle size={16} /> : <Copy size={16} />}
             </button>
           </div>
         </div>

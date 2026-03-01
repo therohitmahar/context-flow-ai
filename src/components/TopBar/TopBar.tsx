@@ -65,10 +65,10 @@ const TopBar: React.FC = () => {
   };
 
   return (
-    <header className="h-14 shrink-0 flex items-center gap-3 px-4 border-b border-white/[0.06] bg-[#0d0e14]/90 backdrop-blur-md z-50 relative">
+    <header className="h-14 shrink-0 flex items-center gap-3 px-6 border-b border-[#2d3748] bg-[#111318] z-50 relative">
       {/* Logo */}
       <div className="flex items-center gap-2.5 mr-2">
-        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-600/30">
+        <div className="w-8 h-8 rounded-lg bg-[#135bec] flex items-center justify-center shadow-lg shadow-blue-600/30">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <rect x="1" y="4" width="5" height="6" rx="1" fill="white" fillOpacity="0.9"/>
             <rect x="8" y="2" width="5" height="4" rx="1" fill="white" fillOpacity="0.6"/>
@@ -77,7 +77,7 @@ const TopBar: React.FC = () => {
             <line x1="6" y1="7" x2="8" y2="9.5" stroke="white" strokeOpacity="0.7" strokeWidth="1"/>
           </svg>
         </div>
-        <span className="text-sm font-semibold text-white">Context Stacker</span>
+        <span className="text-lg font-bold text-white tracking-tight">Context Stacker</span>
       </div>
 
       {/* Breadcrumb */}
@@ -190,7 +190,7 @@ const TopBar: React.FC = () => {
           'flex items-center gap-2 h-8 px-4 rounded-lg text-sm font-semibold transition-all',
           isGenerating
             ? 'bg-indigo-700/50 text-indigo-300 cursor-not-allowed'
-            : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-700/30 hover:shadow-indigo-600/40'
+            : 'bg-[#135bec] text-white hover:bg-blue-600 shadow-lg shadow-[#135bec]/20'
         )}
       >
         {isGenerating ? (

@@ -1,6 +1,6 @@
 import type { Edge } from '@xyflow/react';
 import type { AppNode, ContextNodeData, ComposerNodeData, GeneratedOutput, Project, AIPayload, MentionRef } from '../types';
-import { generateOutput } from './mockAI';
+import { generateOutput } from './geminiAI';
 import { parseMentions } from './mentions';
 
 export interface PersistedState {
@@ -74,7 +74,7 @@ export function buildDefaultNodes(): AppNode[] {
       type: 'composerNode' as const,
       position: { x: 460, y: 220 },
       data: {
-        model: 'gpt-4o',
+        model: 'gemini-2.5-flash',
         prompt: 'Write a professional cover letter using @Resume and focus on skills required in @JobDescription.\n\nEnsure the tone is enthusiastic but professional.',
         mentionRefs: [] as MentionRef[],
         tokenCount: 284,
