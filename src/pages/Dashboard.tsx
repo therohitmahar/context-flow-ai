@@ -145,6 +145,65 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Featured Blueprints */}
+      <div className="flex items-center justify-between mb-8">
+        <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+          <LayoutTemplate className="text-blue-400" size={28} />
+          Featured Blueprints
+        </h3>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 mb-16">
+        {[
+          {
+            id: 'feat-recruiter',
+            name: 'Technical Recruiter',
+            desc: 'Extract interview questions from a Resume & Job Description match.',
+            icon: 'person_search',
+            color: 'blue'
+          },
+          {
+            id: 'feat-pm',
+            name: 'Product Manager',
+            desc: 'Convert a rough feature idea into a structured PRD with user stories.',
+            icon: 'inventory_2',
+            color: 'indigo'
+          },
+          {
+            id: 'feat-legal',
+            name: 'Legal Auditor',
+            desc: 'Analyze contracts for high-risk clauses and missing protections.',
+            icon: 'gavel',
+            color: 'emerald'
+          }
+        ].map((feat) => (
+          <div 
+            key={feat.id}
+            className="group relative bg-[#101622] border border-white/[0.05] rounded-[1.25rem] p-6 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer overflow-hidden"
+          >
+            <div className={`absolute top-0 right-0 w-24 h-24 bg-${feat.color}-500/10 blur-2xl -mr-8 -mt-8 rounded-full`}></div>
+            <div className="flex items-start gap-4 mb-4">
+              <div className={`w-12 h-12 rounded-xl bg-${feat.color}-500/10 border border-${feat.color}-500/20 flex items-center justify-center text-${feat.color}-400`}>
+                <span className="material-symbols-outlined">{feat.icon}</span>
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-lg text-white group-hover:text-blue-400 transition-colors uppercase tracking-tight">
+                  {feat.name}
+                </h4>
+                <p className="text-slate-500 text-sm leading-relaxed mt-1">
+                  {feat.desc}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end">
+              <span className="text-xs font-bold text-slate-400 group-hover:text-blue-400 transition-colors flex items-center gap-1 uppercase tracking-widest">
+                Deploy Blueprint <span className="material-symbols-outlined text-xs">arrow_forward</span>
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* Community Templates Header */}
       <div className="flex items-center justify-between mb-8">
         <h3 className="text-2xl font-bold text-white flex items-center gap-3">
