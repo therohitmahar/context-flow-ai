@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { Layers, LogOut, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { getRedirectURL } from '../lib/auth';
 import { useStore } from '../store/useStore';
 import { ReactFlowProvider } from '@xyflow/react';
 import { HeroFlow } from '../components/HeroFlow/HeroFlow';
@@ -29,7 +30,7 @@ const LandingPage: React.FC = () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: getRedirectURL(),
       },
     });
   };

@@ -9,6 +9,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Create a single supabase client for interacting with your database
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder'
+  supabaseUrl || 'https://missing-supabase-url.supabase.co',
+  supabaseAnonKey || 'missing-key'
 );
+
+if (!supabaseUrl) {
+  console.error(
+    'supabaseUrl is missing! \n' +
+    'Locally: Check your .env file. \n' +
+    'Production: Add VITE_SUPABASE_URL to your Vercel/deployment Environment Variables.'
+  );
+}

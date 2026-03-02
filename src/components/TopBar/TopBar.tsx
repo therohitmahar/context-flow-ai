@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import { supabase } from '../../lib/supabase';
+import { getRedirectURL } from '../../lib/auth';
 import CreateTemplateModal from '../CreateTemplateModal/CreateTemplateModal';
 import { AppIcon } from '../icons/AppIcon';
 
@@ -38,6 +39,9 @@ const TopBar: React.FC = () => {
   const handleLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
+      options: {
+        redirectTo: getRedirectURL(),
+      },
     });
   };
 
