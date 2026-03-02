@@ -12,5 +12,6 @@ export const getRedirectURL = () => {
     url = `https://${url}`;
   }
   
+  console.log('[Auth] Generated Redirect URL:', url);
   return url;
 };
