@@ -97,4 +97,50 @@ export const NODE_COLORS = [
   '#14b8a6', // teal-500
 ];
 
-export const SAVED_CONTEXTS: SavedContext[] = [];
+export const SAVED_CONTEXTS: SavedContext[] = [
+  {
+    id: 'ctx-expert-dev',
+    title: 'Expert Developer',
+    subtitle: 'Senior software engineer persona',
+    contentType: 'text',
+    content: 'You are a Senior Full-Stack Engineer with 15+ years of experience. Your code is clean, performant, and follows SOLID principles.',
+    instruction: 'Adopt this persona to ensure high-quality code generation and architectural advice.',
+    color: '#3b82f6',
+  },
+  {
+    id: 'ctx-json-format',
+    title: 'JSON Formatter',
+    subtitle: 'Strict structured output',
+    contentType: 'text',
+    content: 'Return ONLY valid JSON. No preamble, no markdown blocks, no trailing text.',
+    instruction: 'Use this whenever you need to parse the AI output programmatically.',
+    color: '#10b981',
+  },
+  {
+    id: 'ctx-cot-logic',
+    title: 'Chain of Thought',
+    subtitle: 'Step-by-step reasoning',
+    contentType: 'text',
+    content: 'Think step-by-step. Break down complex problems into smaller, logical components before providing the final answer.',
+    instruction: 'Inject this to improve reasoning accuracy for complex tasks.',
+    color: '#8b5cf6',
+  },
+  {
+    id: 'ctx-code-quality',
+    title: 'Code Standards',
+    subtitle: 'Linting & best practices',
+    contentType: 'text',
+    content: 'Ensure all code includes proper TypeScript types, is well-documented, and handles potential edge cases or errors.',
+    instruction: 'Standard quality gate for all generated code blocks.',
+    color: '#ec4899',
+  },
+  {
+    id: 'ctx-creative-writer',
+    title: 'Creative Writer',
+    subtitle: 'Engaging & vivid prose',
+    contentType: 'text',
+    content: 'You are an award-winning copywriter. Your tone is engaging, your vocabulary is rich, and your metaphors are striking.',
+    instruction: 'Perfect for marketing copy, blog posts, or creative storytelling.',
+    color: '#f59e0b',
+  },
+];

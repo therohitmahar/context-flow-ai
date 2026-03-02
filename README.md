@@ -1,73 +1,62 @@
-# React + TypeScript + Vite
+# Context Flow AI 🧠✨
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Context Flow AI** is a visual prompt engineering platform that allows you to build complex AI workflows using a node-based interface. Instead of writing long, monolithic prompts, you can stack "Context Blocks" (Personas, Guidelines, Data) and connect them to a "Composer" to generate highly precise AI outputs.
 
-Currently, two official plugins are available:
+![Landing Page Preview](https://stack-context.vercel.app/og-image.png)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Features
 
-## React Compiler
+- **Visual Node Editor**: Connect multiple context blocks to a single AI composer using React Flow.
+- **Context Blocks**: Modular pieces of information (Text, URLs, Files) that can be reused across different "Flows".
+- **Dynamic Mentions**: Use `@node-name` in your composer to reference specific context nodes directly in your prompt.
+- **Project Management**: Save and organize your workflows into different projects.
+- **Smart Templates**: Pull from a library of expert-crafted context blocks like "Expert Developer" or "JSON Formatter".
+- **Real-time AI**: Powered by Gemini 2.5 Flash for lightning-fast, high-context generation.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🛠️ Tech Stack
 
-## Expanding the ESLint configuration
+- **Frontend**: React, TypeScript, Vite
+- **Styling**: Tailwind CSS
+- **Flow Engine**: @xyflow/react (React Flow)
+- **Backend/Auth**: Supabase
+- **AI**: Google Gemini Pro (via Vercel Serverless Functions)
+- **Deployment**: Vercel
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## ⚙️ Setup & Installation
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1. Clone the repository
+```bash
+git clone https://github.com/therohitmahar/context-flow-ai.git
+cd context-flow-ai
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 2. Install dependencies
+```bash
+npm install
 ```
+
+### 3. Environment Variables
+Create a `.env` file in the root directory and add your Supabase and Gemini credentials:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_GEMINI_API_KEY=your_gemini_api_key (for local testing via proxy)
+```
+
+### 4. Run locally
+```bash
+npm run dev
+```
+
+## 🌐 Deployment
+
+This project is optimized for deployment on **Vercel**. 
+
+1. Push your code to GitHub.
+2. Link your repository to a new Vercel project.
+3. Add the environment variables in the Vercel Dashboard.
+4. **Important**: Ensure your Supabase Auth "Site URL" matches your Vercel deployment URL.
+
+---
+
+Built with ❤️ by [therohitmahar](https://github.com/therohitmahar)
