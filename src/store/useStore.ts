@@ -21,6 +21,7 @@ import type {
   ContentType,
   SavedContext,
   ContextMenu,
+  FlowViewport,
 } from '../types';
 import { SAVED_CONTEXTS, NODE_COLORS } from '../types';
 import {
@@ -32,6 +33,9 @@ import {
 } from '../lib/localStorage';
 
 const viewedTemplates = new Set<string>();
+const LOCAL_SAVE_DEBOUNCE_MS = 400;
+
+let localSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
 interface HistoryEntry {
   nodes: AppNode[];
@@ -60,7 +64,9 @@ interface AppState {
   searchQuery: string;
   isOutputPanelOpen: boolean;
   contextMenu: ContextMenu | null;
-  autoSaveStatus: 'saved' | 'saving' | 'unsaved';
+  viewport: FlowViewport | null;
+  autoSaveStatus: 'saving-local' | 'saved-local' | 'error' | 'unsaved';
+  cloudSaveStatus: 'idle' | 'saving' | 'saved' | 'error';
   saveCount: number;
   sessionId: string;
   user: any | null;
@@ -94,7 +100,8 @@ interface AppState {
   deleteSavedContext: (id: string) => void;
 
   // Actions — Backend Sync
-  syncToSupabase: () => Promise<void>;
+  syncToSupabase: () => Promise<boolean>;
+  saveToCloud: () => Promise<void>;
   setSessionId: (id: string) => void;
 
   // Actions — flow
@@ -110,6 +117,7 @@ interface AppState {
   setSearchQuery: (q: string) => void;
   setOutputPanelOpen: (open: boolean) => void;
   setContextMenu: (menu: ContextMenu | null) => void;
+  setViewport: (viewport: FlowViewport | null, shouldSave?: boolean) => void;
   openModal: (mode: 'add-node' | 'edit-node' | 'edit-saved', targetId?: string) => void;
   closeModal: () => void;
   updateProjectName: (name: string) => void;
@@ -117,7 +125,7 @@ interface AppState {
   // Persistence
   save: () => void;
   load: (flowId?: string) => Promise<void>;
-  saveAsTemplate: (name: string) => Promise<string | null>;
+  saveAsTemplate: (name: string, isPublished: boolean) => Promise<string | null>;
 }
 
 const defaultProject: Project = {
@@ -179,8 +187,10 @@ export const useStore = create<AppState>((set, get) => ({
   searchQuery: '',
   isOutputPanelOpen: false,
   contextMenu: null,
+  viewport: null,
   modalState: { isOpen: false, mode: 'add-node', targetId: null },
-  autoSaveStatus: 'saved',
+  autoSaveStatus: 'saved-local',
+  cloudSaveStatus: 'idle',
   saveCount: 0,
   sessionId: uuidv4(),
   user: null,
@@ -191,8 +201,8 @@ export const useStore = create<AppState>((set, get) => ({
   // ── Backend Sync ──────────────────────────────────────────────────────────
   setSessionId: (id) => set({ sessionId: id }),
   syncToSupabase: async () => {
-    const { nodes, edges, activeProject, outputHistory, savedContexts, sessionId, user } = get();
-    const state_data = { nodes, edges, activeProject, outputHistory, savedContexts };
+    const { nodes, edges, activeProject, outputHistory, savedContexts, viewport, sessionId, user } = get();
+    const state_data = { nodes, edges, activeProject, outputHistory, savedContexts, viewport };
     
     try {
       const { error } = await supabase
@@ -206,10 +216,21 @@ export const useStore = create<AppState>((set, get) => ({
           { onConflict: 'session_id' }
         );
         
-      if (error) console.error('Supabase sync error:', error);
+      if (error) {
+        console.error('Supabase sync error:', error);
+        return false;
+      }
     } catch (err) {
       console.error('Failed to sync to Supabase', err);
+      return false;
     }
+
+    return true;
+  },
+  saveToCloud: async () => {
+    set({ cloudSaveStatus: 'saving' });
+    const didSync = await get().syncToSupabase();
+    set({ cloudSaveStatus: didSync ? 'saved' : 'error' });
   },
 
   // ── Canvas ────────────────────────────────────────────────────────────────
@@ -225,7 +246,7 @@ export const useStore = create<AppState>((set, get) => ({
       nodes: applyNodeChanges(changes, s.nodes) as AppNode[],
       autoSaveStatus: 'unsaved',
     }));
-    setTimeout(() => get().save(), 1000);
+    get().save();
   },
 
   onEdgesChange: (changes) => {
@@ -238,7 +259,7 @@ export const useStore = create<AppState>((set, get) => ({
       edges: applyEdgeChanges(changes, s.edges),
       autoSaveStatus: 'unsaved',
     }));
-    setTimeout(() => get().save(), 1000);
+    get().save();
   },
 
   onConnect: (connection) => {
@@ -251,7 +272,7 @@ export const useStore = create<AppState>((set, get) => ({
       ),
       autoSaveStatus: 'unsaved',
     }));
-    setTimeout(() => get().save(), 1000);
+    get().save();
   },
 
   // ── Nodes ─────────────────────────────────────────────────────────────────
@@ -279,7 +300,7 @@ export const useStore = create<AppState>((set, get) => ({
       nodes: [...s.nodes, newNode],
       autoSaveStatus: 'unsaved',
     }));
-    setTimeout(() => get().save(), 1000);
+    get().save();
   },
 
   addSavedContext: (saved) => {
@@ -312,7 +333,7 @@ export const useStore = create<AppState>((set, get) => ({
       nodes: [...s.nodes, newNode],
       autoSaveStatus: 'unsaved',
     }));
-    setTimeout(() => get().save(), 1000);
+    get().save();
   },
 
   removeNode: (nodeId) => {
@@ -328,7 +349,7 @@ export const useStore = create<AppState>((set, get) => ({
       contextMenu: null,
       autoSaveStatus: 'unsaved',
     }));
-    setTimeout(() => get().save(), 1000);
+    get().save();
   },
 
   duplicateNode: (nodeId) => {
@@ -349,7 +370,9 @@ export const useStore = create<AppState>((set, get) => ({
       future: [],
       nodes: [...s.nodes, newNode],
       contextMenu: null,
+      autoSaveStatus: 'unsaved',
     }));
+    get().save();
   },
 
   updateNodeData: (nodeId, data) => {
@@ -398,7 +421,7 @@ export const useStore = create<AppState>((set, get) => ({
         autoSaveStatus: 'unsaved',
       };
     });
-    setTimeout(() => get().save(), 1200);
+    get().save();
   },
 
   // ── History ───────────────────────────────────────────────────────────────
@@ -413,7 +436,7 @@ export const useStore = create<AppState>((set, get) => ({
       edges: prev.edges,
       autoSaveStatus: 'unsaved',
     }));
-    setTimeout(() => get().save(), 500);
+    get().save();
   },
 
   redo: () => {
@@ -427,7 +450,7 @@ export const useStore = create<AppState>((set, get) => ({
       edges: next.edges,
       autoSaveStatus: 'unsaved',
     }));
-    setTimeout(() => get().save(), 500);
+    get().save();
   },
 
   reset: () => {
@@ -439,9 +462,10 @@ export const useStore = create<AppState>((set, get) => ({
       edges: buildDefaultEdges(),
       generatedOutput: null,
       isOutputPanelOpen: false,
+      viewport: null,
       autoSaveStatus: 'unsaved',
     }));
-    setTimeout(() => get().save(), 500);
+    get().save();
   },
 
   // ── Flow ──────────────────────────────────────────────────────────────────
@@ -456,7 +480,7 @@ export const useStore = create<AppState>((set, get) => ({
         isGenerating: false,
         autoSaveStatus: 'unsaved',
       }));
-      setTimeout(() => get().save(), 1000);
+      get().save();
     } catch (err) {
       console.error('Run flow error:', err);
       set({ isGenerating: false });
@@ -471,12 +495,22 @@ export const useStore = create<AppState>((set, get) => ({
   setSearchQuery: (q) => set({ searchQuery: q }),
   setOutputPanelOpen: (open) => set({ isOutputPanelOpen: open }),
   setContextMenu: (menu) => set({ contextMenu: menu }),
+  setViewport: (viewport, shouldSave = true) => {
+    set({ viewport, autoSaveStatus: shouldSave ? 'unsaved' : get().autoSaveStatus });
+    if (shouldSave) {
+      get().save();
+    }
+  },
   openModal: (mode, targetId) => set({ modalState: { isOpen: true, mode, targetId: targetId ?? null } }),
   closeModal: () => set((s) => ({ modalState: { ...s.modalState, isOpen: false } })),
   updateProjectName: (name) =>
-    set((s) => ({
-      activeProject: { ...s.activeProject, name, updatedAt: Date.now() },
-    })),
+    {
+      set((s) => ({
+        activeProject: { ...s.activeProject, name, updatedAt: Date.now() },
+        autoSaveStatus: 'unsaved',
+      }));
+      get().save();
+    },
 
   // ── Saved Contexts ────────────────────────────────────────────────────────
   createSavedContext: (context) => {
@@ -490,7 +524,7 @@ export const useStore = create<AppState>((set, get) => ({
       savedContexts: [...state.savedContexts, newContext],
       autoSaveStatus: 'unsaved',
     }));
-    setTimeout(() => get().save(), 1200);
+    get().save();
   },
 
   updateSavedContext: (id, updates) => {
@@ -500,7 +534,7 @@ export const useStore = create<AppState>((set, get) => ({
       ),
       autoSaveStatus: 'unsaved',
     }));
-    setTimeout(() => get().save(), 1200);
+    get().save();
   },
 
   deleteSavedContext: (id) => {
@@ -528,44 +562,46 @@ export const useStore = create<AppState>((set, get) => ({
         autoSaveStatus: 'unsaved',
       };
     });
-    setTimeout(() => get().save(), 1200);
+    get().save();
   },
 
   // ── Persistence ───────────────────────────────────────────────────────────
   save: () => {
-    const { nodes, edges, activeProject, outputHistory, savedContexts, saveCount, syncToSupabase, currentTemplateId, isTemplateOwner } = get();
+    const { currentTemplateId, isTemplateOwner } = get();
     // Do not auto-save to someone else's template
     if (currentTemplateId && !isTemplateOwner) return;
 
-    set({ autoSaveStatus: 'saving' });
-    
-    // 1. Save to LocalStorage immediately
-    saveToStorage(
-      { nodes, edges, activeProject, outputHistory, savedContexts },
-      currentTemplateId || undefined
-    );
-    
-    // Increment save count
-    const nextSaveCount = saveCount + 1;
-    set({ saveCount: nextSaveCount, autoSaveStatus: 'saved' });
+    if (localSaveTimer) clearTimeout(localSaveTimer);
+    set({ autoSaveStatus: 'unsaved' });
 
-    // 10:1 Sync Strategy
-    if (nextSaveCount >= 10) {
-      syncToSupabase();
-      set({ saveCount: 0 });
-    }
+    localSaveTimer = setTimeout(() => {
+      const { nodes, edges, activeProject, outputHistory, savedContexts, viewport, currentTemplateId: templateId } = get();
+      set({ autoSaveStatus: 'saving-local' });
+
+      saveToStorage(
+        { nodes, edges, activeProject, outputHistory, savedContexts, viewport },
+        templateId || undefined
+      );
+
+      set({ autoSaveStatus: 'saved-local' });
+    }, LOCAL_SAVE_DEBOUNCE_MS);
   },
 
   currentTemplateId: null,
   isTemplateOwner: true,
 
-  saveAsTemplate: async (name: string) => {
-    const { nodes, edges, activeProject, outputHistory, savedContexts, user } = get();
+  saveAsTemplate: async (name: string, isPublished: boolean) => {
+    const { nodes, edges, activeProject, outputHistory, savedContexts, viewport, user } = get();
+    if (!isPublished && !user?.id) {
+      console.error('Private templates require an authenticated user.');
+      return null;
+    }
+
     const updatedProject = { ...activeProject, name, updatedAt: Date.now() };
     
     set({ activeProject: updatedProject });
 
-    const state_data = { nodes, edges, activeProject: updatedProject, outputHistory, savedContexts };
+    const state_data = { nodes, edges, activeProject: updatedProject, outputHistory, savedContexts, viewport };
 
     try {
       const { data, error } = await supabase
@@ -573,6 +609,7 @@ export const useStore = create<AppState>((set, get) => ({
         .insert({
           creator_id: user?.id || null,
           template_name: name,
+          is_published: isPublished,
           state_data
         })
         .select()
@@ -610,6 +647,7 @@ export const useStore = create<AppState>((set, get) => ({
       activeProject: { ...defaultProject, name: 'Untitled Flow' },
       outputHistory: [],
       savedContexts: [...SAVED_CONTEXTS],
+      viewport: null,
     });
 
     const { sessionId, user } = get();
@@ -644,6 +682,7 @@ export const useStore = create<AppState>((set, get) => ({
             },
             outputHistory: cloudState.outputHistory || [],
             savedContexts: cloudState.savedContexts ?? [...SAVED_CONTEXTS],
+            viewport: cloudState.viewport ?? null,
             currentTemplateId: flowId,
             isTemplateOwner: user ? user.id === data.creator_id : false, // anonymous users don't own templates they didn't just create
           });
@@ -675,6 +714,7 @@ export const useStore = create<AppState>((set, get) => ({
           activeProject: cloudState.activeProject || defaultProject,
           outputHistory: cloudState.outputHistory || [],
           savedContexts: cloudState.savedContexts ?? [...SAVED_CONTEXTS],
+          viewport: cloudState.viewport ?? null,
         });
         return;
       }
@@ -690,6 +730,7 @@ export const useStore = create<AppState>((set, get) => ({
         activeProject: localData.activeProject,
         outputHistory: localData.outputHistory,
         savedContexts: localData.savedContexts ?? [...SAVED_CONTEXTS],
+        viewport: localData.viewport ?? null,
       });
     }
   },

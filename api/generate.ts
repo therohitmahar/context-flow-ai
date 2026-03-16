@@ -21,11 +21,16 @@ export default async function handler(req: Request) {
   try {
     const { model, fullPrompt } = await req.json();
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model || 'gemini-2.5-flash'}:generateContent?key=${apiKey}`;
+    const selectedModel = model || 'gemini-3-flash-preview';
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent`;
 
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
       body: JSON.stringify({
         contents: [
           {

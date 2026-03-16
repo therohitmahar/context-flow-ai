@@ -12,7 +12,10 @@ interface Template {
   views: number;
   created_at: string;
   creator_id: string | null;
-  state_data?: any;
+  is_published: boolean;
+  state_data?: {
+    nodes?: Array<{ type?: string }>;
+  };
 }
 
 const Dashboard: React.FC = () => {
@@ -41,11 +44,19 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('shared_templates')
-          .select('id, template_name, views, created_at, state_data, creator_id')
+          .select('id, template_name, views, created_at, state_data, creator_id, is_published')
           .order('views', { ascending: false })
           .limit(12);
+
+        if (user?.id) {
+          query = query.or(`is_published.eq.true,creator_id.eq.${user.id}`);
+        } else {
+          query = query.eq('is_published', true);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
         setTemplates(data || []);
@@ -57,7 +68,7 @@ const Dashboard: React.FC = () => {
     };
 
     fetchTemplates();
-  }, []);
+  }, [user?.id]);
 
   const handleCreateNew = () => {
     navigate(`/flow/${uuidv4()}`);
@@ -222,7 +233,7 @@ const Dashboard: React.FC = () => {
       ) : templates.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {templates.map((template) => {
-            const blockCount = template.state_data?.nodes?.filter((n: any) => n.type === 'contextNode').length || 0;
+            const blockCount = template.state_data?.nodes?.filter((n) => n.type === 'contextNode').length || 0;
             
             return (
               <div 
@@ -247,7 +258,9 @@ const Dashboard: React.FC = () => {
                     {template.template_name}
                   </h4>
                   <p className="text-slate-500 text-sm line-clamp-2 flex-1">
-                    A community-shared context layout ready to be cloned.
+                    {template.is_published
+                      ? 'A community-shared context layout ready to be cloned.'
+                      : 'Your private template. Only you can see it on the dashboard.'}
                   </p>
                   
                   <div className="flex items-center justify-between pt-4 mt-auto border-t border-white/[0.05]">
@@ -255,9 +268,20 @@ const Dashboard: React.FC = () => {
                       <Layers size={14} />
                       {blockCount} Blocks
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
-                      <Eye size={14} />
-                      {template.views || 0}
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                          template.is_published
+                            ? 'bg-emerald-500/10 text-emerald-400'
+                            : 'bg-indigo-500/10 text-indigo-400'
+                        }`}
+                      >
+                        {template.is_published ? 'Public' : 'Private'}
+                      </span>
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
+                        <Eye size={14} />
+                        {template.views || 0}
+                      </div>
                     </div>
                   </div>
                 </div>

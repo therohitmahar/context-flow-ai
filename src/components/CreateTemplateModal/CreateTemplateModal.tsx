@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Share2, Check, Loader2 } from 'lucide-react';
+import { X, Share2, Check, Loader2, Lock } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 
 interface Props {
@@ -7,8 +7,9 @@ interface Props {
 }
 
 const CreateTemplateModal: React.FC<Props> = ({ onClose }) => {
-  const { saveAsTemplate, activeProject } = useStore();
+  const { saveAsTemplate, activeProject, user } = useStore();
   const [templateName, setTemplateName] = useState<string>(activeProject?.name || 'My Custom Template');
+  const [isPublished, setIsPublished] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [savedUrl, setSavedUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -16,7 +17,7 @@ const CreateTemplateModal: React.FC<Props> = ({ onClose }) => {
   const handleSave = async () => {
     if (!templateName.trim()) return;
     setIsSaving(true);
-    const newId = await saveAsTemplate(templateName);
+    const newId = await saveAsTemplate(templateName, isPublished);
     setIsSaving(false);
 
     if (newId) {
@@ -54,7 +55,7 @@ const CreateTemplateModal: React.FC<Props> = ({ onClose }) => {
           {!savedUrl ? (
             <>
               <p className="text-sm text-slate-300">
-                Turn your current canvas into a public, reusable template. Anyone with the link will receive a cloned version of your setup.
+                Save this flow as a public community template or keep it private to your own account.
               </p>
               
               <div className="flex flex-col gap-2">
@@ -72,6 +73,56 @@ const CreateTemplateModal: React.FC<Props> = ({ onClose }) => {
                 />
               </div>
 
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-slate-400 uppercase tracking-wider">
+                  Visibility
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsPublished(true)}
+                    className={`rounded-lg border px-4 py-3 text-left transition-all ${
+                      isPublished
+                        ? 'border-emerald-500/50 bg-emerald-500/10 text-white'
+                        : 'border-[#2d3748] bg-[#0f172a] text-slate-400 hover:border-slate-500'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 font-semibold">
+                      <Share2 size={16} className="text-emerald-400" />
+                      Public
+                    </div>
+                    <p className="mt-1 text-xs text-slate-400">
+                      Visible to everyone on the dashboard.
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (user) setIsPublished(false);
+                    }}
+                    className={`rounded-lg border px-4 py-3 text-left transition-all ${
+                      !isPublished
+                        ? 'border-indigo-500/50 bg-indigo-500/10 text-white'
+                        : 'border-[#2d3748] bg-[#0f172a] text-slate-400 hover:border-slate-500'
+                    }`}
+                    disabled={!user}
+                  >
+                    <div className="flex items-center gap-2 font-semibold">
+                      <Lock size={16} className="text-indigo-400" />
+                      Private
+                    </div>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {user ? 'Only visible to you after sign-in.' : 'Sign in to save private templates.'}
+                    </p>
+                  </button>
+                </div>
+                {!user && (
+                  <p className="text-xs text-amber-400">
+                    Private templates require sign-in. Anonymous users can only publish public templates.
+                  </p>
+                )}
+              </div>
+
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   onClick={onClose}
@@ -84,8 +135,8 @@ const CreateTemplateModal: React.FC<Props> = ({ onClose }) => {
                   disabled={!templateName.trim() || isSaving}
                   className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Share2 size={16} />}
-                  Publish Template
+                  {isSaving ? <Loader2 size={16} className="animate-spin" /> : isPublished ? <Share2 size={16} /> : <Lock size={16} />}
+                  {isPublished ? 'Publish Template' : 'Save Private Template'}
                 </button>
               </div>
             </>
@@ -94,9 +145,13 @@ const CreateTemplateModal: React.FC<Props> = ({ onClose }) => {
               <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4 border border-emerald-500/30">
                 <Check size={24} className="text-emerald-400" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">Template Published!</h3>
+              <h3 className="text-lg font-bold text-white mb-2">
+                {isPublished ? 'Template Published!' : 'Private Template Saved!'}
+              </h3>
               <p className="text-sm text-slate-400 mb-6 px-4">
-                Your flow is now live. Share this URL with your team or the community.
+                {isPublished
+                  ? 'Your flow is now live. Share this URL with your team or the community.'
+                  : 'Your private template is saved. It will only appear in your own dashboard.'}
               </p>
 
               <div className="w-full flex items-center bg-[#0f172a] border border-[#2d3748] rounded-lg p-1">
