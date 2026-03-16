@@ -5,12 +5,13 @@ interface NodeRef {
   title: string;
 }
 
+export const MENTION_REGEX = /@([\w-]+)/g;
+
 export function parseMentions(text: string, nodes: NodeRef[]): MentionRef[] {
   const refs: MentionRef[] = [];
-  const regex = /@(\w+)/g;
   let match: RegExpExecArray | null;
 
-  while ((match = regex.exec(text)) !== null) {
+  while ((match = MENTION_REGEX.exec(text)) !== null) {
     const mentionLabel = match[1];
     const node = nodes.find(
       (n) => n.title.toLowerCase() === mentionLabel.toLowerCase()
@@ -46,10 +47,9 @@ export function validateMentions(
 }
 
 export function extractMentionLabels(text: string): string[] {
-  const regex = /@(\w+)/g;
   const labels = new Set<string>();
   let match: RegExpExecArray | null;
-  while ((match = regex.exec(text)) !== null) {
+  while ((match = MENTION_REGEX.exec(text)) !== null) {
     labels.add(match[1]);
   }
   return Array.from(labels);

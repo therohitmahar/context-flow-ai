@@ -14,6 +14,7 @@ import {
   ThumbsDown,
   Sparkles,
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { useStore } from '../../store/useStore';
 
 const OutputPanel: React.FC = () => {
@@ -150,8 +151,8 @@ const OutputPanel: React.FC = () => {
                   <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/5 blur-3xl rounded-full" />
                   <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-500/5 blur-3xl rounded-full" />
                   
-                  <div className="relative z-10 text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-medium">
-                    {generatedOutput.text}
+                  <div className="relative z-10 text-sm text-slate-300 leading-relaxed font-medium markdown-content">
+                    <ReactMarkdown>{generatedOutput.text}</ReactMarkdown>
                   </div>
 
                   {/* Premium Finish Indicator */}

@@ -6,6 +6,8 @@ import {
   Play,
   Loader2,
   Clock,
+  Cloud,
+  CloudCheck,
   Undo2,
   Redo2,
   RotateCcw,
@@ -25,8 +27,10 @@ const TopBar: React.FC = () => {
     searchQuery,
     setSearchQuery,
     runFlow,
+    saveToCloud,
     isGenerating,
     autoSaveStatus,
+    cloudSaveStatus,
     undo,
     redo,
     reset,
@@ -122,16 +126,22 @@ const TopBar: React.FC = () => {
 
       {/* Auto-save pill */}
       <div className="flex items-center gap-1.5 ml-1">
-        {autoSaveStatus === 'saved' && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot" />
-            <span className="text-xs font-medium text-emerald-400">Auto-Saved</span>
-          </div>
-        )}
-        {autoSaveStatus === 'saving' && (
+        {autoSaveStatus === 'saving-local' && (
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
             <Loader2 size={10} className="text-amber-400 animate-spin" />
-            <span className="text-xs font-medium text-amber-400">Saving...</span>
+            <span className="text-xs font-medium text-amber-400">Saving Locally...</span>
+          </div>
+        )}
+        {autoSaveStatus === 'saved-local' && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-sky-400 pulse-dot" />
+            <span className="text-xs font-medium text-sky-400">Saved Locally</span>
+          </div>
+        )}
+        {autoSaveStatus === 'error' && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20">
+            <Clock size={10} className="text-red-400" />
+            <span className="text-xs font-medium text-red-400">Local Save Failed</span>
           </div>
         )}
         {autoSaveStatus === 'unsaved' && (
@@ -197,7 +207,7 @@ const TopBar: React.FC = () => {
       </div>
 
       {/* Search */}
-      <div className="relative">
+      {/* <div className="relative">
         <Search
           size={14}
           className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
@@ -209,11 +219,44 @@ const TopBar: React.FC = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-44 h-8 pl-8 pr-3 rounded-lg bg-white/[0.04] border border-white/[0.08] text-sm text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.06] transition-all"
         />
-      </div>
+      </div> */}
 
       {/* Settings */}
       <button className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all">
         <Settings size={16} />
+      </button>
+
+      <button
+        onClick={saveToCloud}
+        disabled={cloudSaveStatus === 'saving'}
+        className={clsx(
+          'flex items-center justify-center gap-2 h-8 px-3 rounded-lg text-sm font-semibold transition-all',
+          cloudSaveStatus === 'saving'
+            ? 'bg-indigo-700/50 text-indigo-300 cursor-not-allowed'
+            : cloudSaveStatus === 'saved'
+              ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+              : cloudSaveStatus === 'error'
+                ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                : 'bg-white/[0.04] text-slate-300 hover:bg-white/[0.08] hover:text-white'
+        )}
+        title="Save current flow to Supabase"
+      >
+        {cloudSaveStatus === 'saving' ? (
+          <>
+            <Loader2 size={13} className="animate-spin" />
+            Saving Cloud
+          </>
+        ) : cloudSaveStatus === 'saved' ? (
+          <>
+            <CloudCheck size={13} />
+            Saved Cloud
+          </>
+        ) : (
+          <>
+            <Cloud size={13} />
+            Save Cloud
+          </>
+        )}
       </button>
 
       {/* Share Template */}

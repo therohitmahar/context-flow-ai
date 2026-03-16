@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -6,6 +6,8 @@ import {
   Controls,
   MiniMap,
   Panel,
+  useNodesInitialized,
+  useReactFlow,
 } from '@xyflow/react';
 import type { NodeChange, EdgeChange, Connection } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -29,9 +31,16 @@ const Canvas: React.FC = () => {
     onConnect,
     contextMenu,
     setContextMenu,
+    viewport,
+    setViewport,
+    sessionId,
+    currentTemplateId,
   } = useStore();
 
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const { fitView, getViewport, setViewport: applyViewport } = useReactFlow();
+  const nodesInitialized = useNodesInitialized();
+  const hasAppliedInitialViewportRef = useRef(false);
 
   // Filter nodes by search query
   const filteredNodes = searchQuery
@@ -63,6 +72,44 @@ const Canvas: React.FC = () => {
     [setContextMenu]
   );
 
+  useEffect(() => {
+    hasAppliedInitialViewportRef.current = false;
+  }, [sessionId, currentTemplateId]);
+
+  useEffect(() => {
+    if (!nodesInitialized || hasAppliedInitialViewportRef.current) return;
+
+    if (viewport) {
+      void applyViewport(viewport, { duration: 0 });
+      hasAppliedInitialViewportRef.current = true;
+      return;
+    }
+
+    let cancelled = false;
+    const applyFullView = async () => {
+      await fitView({ padding: 0.35, maxZoom: 0.8, duration: 0 });
+      if (!cancelled) {
+        setViewport(getViewport(), false);
+        hasAppliedInitialViewportRef.current = true;
+      }
+    };
+
+    void applyFullView();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    applyViewport,
+    currentTemplateId,
+    fitView,
+    getViewport,
+    nodesInitialized,
+    sessionId,
+    setViewport,
+    viewport,
+  ]);
+
   return (
     <div ref={reactFlowWrapper} className="flex-1 relative bg-[#0d1117]">
       <ReactFlow
@@ -73,9 +120,9 @@ const Canvas: React.FC = () => {
         onConnect={onConnect as (connection: Connection) => void}
         onPaneClick={handlePaneClick}
         onNodeContextMenu={handleNodeContextMenu}
+        onMoveEnd={(_, nextViewport) => setViewport(nextViewport)}
         nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.3 }}
+        fitView={false}
         minZoom={0.2}
         maxZoom={2}
         defaultEdgeOptions={{

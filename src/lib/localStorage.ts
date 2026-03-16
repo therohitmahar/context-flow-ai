@@ -1,5 +1,5 @@
 import type { Edge } from '@xyflow/react';
-import type { AppNode, ContextNodeData, ComposerNodeData, GeneratedOutput, Project, AIPayload, MentionRef, SavedContext } from '../types';
+import type { AppNode, ContextNodeData, ComposerNodeData, GeneratedOutput, Project, AIPayload, MentionRef, SavedContext, FlowViewport } from '../types';
 import { generateOutput } from './geminiAI';
 import { parseMentions } from './mentions';
 
@@ -9,6 +9,7 @@ export interface PersistedState {
   activeProject: Project;
   outputHistory: GeneratedOutput[];
   savedContexts?: SavedContext[];
+  viewport?: FlowViewport | null;
 }
 
 const STORAGE_KEY = 'context-stacker-state';
@@ -40,7 +41,7 @@ export function buildDefaultNodes(): AppNode[] {
       type: 'composerNode' as const,
       position: { x: 460, y: 220 },
       data: {
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         prompt: '',
         mentionRefs: [] as MentionRef[],
         tokenCount: 0,

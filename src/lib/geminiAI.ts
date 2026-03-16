@@ -1,7 +1,24 @@
 import type { AIPayload } from '../types';
 
+function getGeminiErrorMessage(status: number, body: string, model: string): string {
+  try {
+    const parsed = JSON.parse(body) as {
+      error?: { message?: string; status?: string };
+    };
+    const message = parsed.error?.message?.trim();
+
+    if (status === 429) {
+      return `Gemini quota is exhausted for ${model}. The current server key cannot process requests right now. ${message ?? 'Check Gemini API billing and rate limits, then try again.'}`;
+    }
+
+    return message || `Gemini API returned HTTP ${status}.`;
+  } catch {
+    return body || `Gemini API returned HTTP ${status}.`;
+  }
+}
+
 export async function generateOutput(payload: AIPayload): Promise<string> {
-  const model = payload.model || 'gemini-2.5-flash';
+  const model = payload.model || 'gemini-3-flash-preview';
 
   // Build the prompt from the payload
   const parts: string[] = [];
@@ -41,10 +58,13 @@ export async function generateOutput(payload: AIPayload): Promise<string> {
     const localKey = import.meta.env.VITE_GEMINI_API_KEY;
     
     if (import.meta.env.DEV && localKey) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${localKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
       response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': localKey,
+        },
         body: JSON.stringify({
           contents: [{ parts: [{ text: fullPrompt }] }],
           generationConfig: { temperature: 0.8, maxOutputTokens: 2048 },
@@ -62,7 +82,7 @@ export async function generateOutput(payload: AIPayload): Promise<string> {
     if (!response.ok) {
       const errBody = await response.text();
       console.error('Gemini API error:', response.status, errBody);
-      throw new Error(`Gemini API returned ${response.status}: ${errBody}`);
+      throw new Error(getGeminiErrorMessage(response.status, errBody, model));
     }
 
     const data = await response.json();

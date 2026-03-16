@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Handle, Position, useEdges } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { clsx } from 'clsx';
@@ -12,7 +12,59 @@ import {
 import type { ComposerNodeData, ContextNodeData } from '../../../types';
 import { MODELS } from '../../../types';
 import { useStore } from '../../../store/useStore';
-import { getMentionSuggestions, estimateTokens } from '../../../lib/mentions';
+import { getMentionSuggestions, estimateTokens, MENTION_REGEX } from '../../../lib/mentions';
+
+interface MentionRange {
+  start: number;
+  end: number;
+  query: string;
+}
+
+function getActiveMentionRange(text: string, cursor: number): MentionRange | null {
+  let pointer = cursor - 1;
+
+  while (pointer >= 0) {
+    const char = text[pointer];
+
+    if (char === '@') {
+      const isBoundary = pointer === 0 || /\s/.test(text[pointer - 1]);
+      if (!isBoundary) return null;
+
+      const query = text.slice(pointer + 1, cursor);
+      if (!/^[\w-]*$/.test(query)) return null;
+
+      return {
+        start: pointer,
+        end: cursor,
+        query,
+      };
+    }
+
+    if (/\s/.test(char)) return null;
+    pointer -= 1;
+  }
+
+  return null;
+}
+
+function getMentionRangeForDeletion(text: string, cursor: number) {
+  if (cursor <= 0) return null;
+
+  for (const match of text.matchAll(MENTION_REGEX)) {
+    const start = match.index ?? 0;
+    const end = start + match[0].length;
+
+    if (cursor > start && cursor <= end) {
+      return { start, end };
+    }
+
+    if (text[cursor - 1] === ' ' && end === cursor - 1) {
+      return { start, end: cursor };
+    }
+  }
+
+  return null;
+}
 
 const ComposerNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const composerData = data as ComposerNodeData;
@@ -20,18 +72,63 @@ const ComposerNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const edges = useEdges();
 
   const [showModelDropdown, setShowModelDropdown] = useState(false);
-  const [mentionQuery, setMentionQuery] = useState('');
-  const [showMentionDropdown, setShowMentionDropdown] = useState(false);
-  const [cursorAtMention, setCursorAtMention] = useState(-1);
+  const [mentionState, setMentionState] = useState<MentionRange | null>(null);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLDivElement>(null);
+  const commitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [localPrompt, setLocalPrompt] = useState(composerData.prompt);
 
   // Sync local prompt if external changes (like Undo/Redo) occur
   useEffect(() => {
-    setLocalPrompt(composerData.prompt);
+    if (commitTimeoutRef.current) {
+      clearTimeout(commitTimeoutRef.current);
+      commitTimeoutRef.current = null;
+    }
+    queueMicrotask(() => {
+      setLocalPrompt(composerData.prompt);
+    });
   }, [composerData.prompt]);
+
+  useEffect(
+    () => () => {
+      if (commitTimeoutRef.current) {
+        clearTimeout(commitTimeoutRef.current);
+      }
+    },
+    []
+  );
+
+  const commitPrompt = useCallback(
+    (value: string, immediate = false) => {
+      if (commitTimeoutRef.current) {
+        clearTimeout(commitTimeoutRef.current);
+      }
+
+      const applyUpdate = () => {
+        updateNodeData(id, {
+          prompt: value,
+          tokenCount: estimateTokens(value),
+        });
+        commitTimeoutRef.current = null;
+      };
+
+      if (immediate) {
+        applyUpdate();
+        return;
+      }
+
+      commitTimeoutRef.current = setTimeout(applyUpdate, 250);
+    },
+    [id, updateNodeData]
+  );
+
+  const syncMentionState = useCallback((value: string, cursor: number) => {
+    const nextMention = getActiveMentionRange(value, cursor);
+    setMentionState(nextMention);
+    setActiveSuggestionIndex(0);
+  }, []);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLTextAreaElement>) => {
     if (highlightRef.current) {
@@ -41,10 +138,14 @@ const ComposerNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   }, []);
 
   // Connected node IDs
-  const connectedNodeIds = new Set(
-    edges
-      .filter((e) => e.target === id)
-      .map((e) => e.source)
+  const connectedNodeIds = useMemo(
+    () =>
+      new Set(
+        edges
+          .filter((e) => e.target === id)
+          .map((e) => e.source)
+      ),
+    [edges, id]
   );
 
   // All context node titles
@@ -58,11 +159,10 @@ const ComposerNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const renderHighlightedText = useCallback(
     (text: string) => {
       const parts: React.ReactNode[] = [];
-      const regex = /@(\w+)/g;
       let lastIndex = 0;
       let match: RegExpExecArray | null;
 
-      while ((match = regex.exec(text)) !== null) {
+      while ((match = MENTION_REGEX.exec(text)) !== null) {
         if (match.index > lastIndex) {
           parts.push(text.slice(lastIndex, match.index));
         }
@@ -102,70 +202,48 @@ const ComposerNode: React.FC<NodeProps> = ({ id, data, selected }) => {
   const handlePromptChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const value = e.target.value;
-      
       // Update local state IMMEDIATELY to prevent cursor jumping
       setLocalPrompt(value);
 
       const cursorPos = e.target.selectionStart ?? 0;
-
-      // Check if we're typing an @mention
-      const textBefore = value.slice(0, cursorPos);
-      const mentionMatch = textBefore.match(/@(\w*)$/);
-
-      if (mentionMatch) {
-        setMentionQuery(mentionMatch[1]);
-        setCursorAtMention(cursorPos - mentionMatch[0].length);
-        setShowMentionDropdown(true);
-      } else {
-        setShowMentionDropdown(false);
-        setCursorAtMention(-1);
-      }
-
-      updateNodeData(id, {
-        prompt: value,
-        tokenCount: estimateTokens(value),
-      });
+      syncMentionState(value, cursorPos);
+      commitPrompt(value);
     },
-    [id, updateNodeData]
+    [commitPrompt, syncMentionState]
   );
 
   const insertMention = useCallback(
     (nodeTitle: string) => {
       const textarea = textareaRef.current;
-      if (!textarea || cursorAtMention < 0) return;
+      if (!textarea || !mentionState) return;
 
       const prompt = localPrompt;
-      // Start of the "@" character
-      const before = prompt.slice(0, cursorAtMention);
-      // End of the search query
-      const after = prompt.slice(cursorAtMention + mentionQuery.length + 1);
+      const before = prompt.slice(0, mentionState.start);
+      const after = prompt.slice(mentionState.end);
 
       const newPrompt = before + `@${nodeTitle} ` + after;
 
       setLocalPrompt(newPrompt);
-      updateNodeData(id, {
-        prompt: newPrompt,
-        tokenCount: estimateTokens(newPrompt),
-      });
+      commitPrompt(newPrompt, true);
 
-      setShowMentionDropdown(false);
-      setCursorAtMention(-1);
-      setMentionQuery('');
+      setMentionState(null);
+      setActiveSuggestionIndex(0);
 
       // Restore focus to textarea after render
       setTimeout(() => {
         textarea.focus();
-        const newCursor = cursorAtMention + nodeTitle.length + 2; // +1 for @, +1 for space
+        const newCursor = mentionState.start + nodeTitle.length + 2;
         textarea.setSelectionRange(newCursor, newCursor);
       }, 0);
     },
-    [id, composerData.prompt, cursorAtMention, mentionQuery, updateNodeData]
+    [commitPrompt, localPrompt, mentionState]
   );
 
-  const suggestions = getMentionSuggestions(mentionQuery, contextNodes);
+  const suggestions = getMentionSuggestions(mentionState?.query ?? '', contextNodes);
+  const showMentionDropdown = Boolean(mentionState) && suggestions.length > 0;
 
   // Count unconnected @mentions
-  const mentionLabels = [...localPrompt.matchAll(/@(\w+)/g)].map((m) => m[1]);
+  const mentionLabels = [...localPrompt.matchAll(MENTION_REGEX)].map((m) => m[1]);
   const unconnectedMentions = mentionLabels.filter((label) => {
     const node = contextNodes.find(
       (n) => n.title.toLowerCase() === label.toLowerCase()
@@ -182,23 +260,19 @@ const ComposerNode: React.FC<NodeProps> = ({ id, data, selected }) => {
           : 'border-[#135bec]/50'
       )}
     >
-      {/* Input handles — multiple */}
-      {[0, 1, 2, 3, 4].map((i) => (
-        <Handle
-          key={i}
-          type="target"
-          position={Position.Left}
-          id={`input-${i}`}
-          style={{
-            width: 12,
-            height: 12,
-            background: '#475569',
-            border: '2px solid #1a202c',
-            left: -6,
-            top: `${20 + i * 12}%`,
-          }}
-        />
-      ))}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="input"
+        style={{
+          width: 12,
+          height: 12,
+          background: '#475569',
+          border: '2px solid #1a202c',
+          left: -6,
+          top: '50%',
+        }}
+      />
 
       {/* Output handle */}
       {/* <Handle
@@ -291,8 +365,79 @@ const ComposerNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             ref={textareaRef}
             value={localPrompt}
             onChange={handlePromptChange}
+            onClick={(e) => {
+              e.stopPropagation();
+              syncMentionState(
+                e.currentTarget.value,
+                e.currentTarget.selectionStart ?? e.currentTarget.value.length
+              );
+            }}
+            onKeyUp={(e) => {
+              syncMentionState(
+                e.currentTarget.value,
+                e.currentTarget.selectionStart ?? e.currentTarget.value.length
+              );
+            }}
+            onSelect={(e) => {
+              syncMentionState(
+                e.currentTarget.value,
+                e.currentTarget.selectionStart ?? e.currentTarget.value.length
+              );
+            }}
+            onKeyDown={(e) => {
+              if (showMentionDropdown) {
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  setActiveSuggestionIndex((index) => (index + 1) % suggestions.length);
+                  return;
+                }
+
+                if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  setActiveSuggestionIndex((index) => (index - 1 + suggestions.length) % suggestions.length);
+                  return;
+                }
+
+                if ((e.key === 'Enter' || e.key === 'Tab') && suggestions[activeSuggestionIndex]) {
+                  e.preventDefault();
+                  insertMention(suggestions[activeSuggestionIndex].title);
+                  return;
+                }
+
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setMentionState(null);
+                  setActiveSuggestionIndex(0);
+                  return;
+                }
+              }
+
+              if (e.key === 'Backspace') {
+                const cursor = e.currentTarget.selectionStart ?? 0;
+                const selectionEnd = e.currentTarget.selectionEnd ?? cursor;
+                if (cursor !== selectionEnd) return;
+
+                const mentionRange = getMentionRangeForDeletion(e.currentTarget.value, cursor);
+                if (!mentionRange) return;
+
+                e.preventDefault();
+                const nextValue =
+                  e.currentTarget.value.slice(0, mentionRange.start) +
+                  e.currentTarget.value.slice(mentionRange.end);
+
+                setLocalPrompt(nextValue);
+                commitPrompt(nextValue, true);
+                setMentionState(null);
+                setActiveSuggestionIndex(0);
+
+                requestAnimationFrame(() => {
+                  textareaRef.current?.focus();
+                  textareaRef.current?.setSelectionRange(mentionRange.start, mentionRange.start);
+                });
+              }
+            }}
+            onBlur={() => commitPrompt(localPrompt, true)}
             onScroll={handleScroll}
-            onClick={(e) => e.stopPropagation()}
             className="nodrag nowheel w-full h-full bg-transparent text-sm font-mono leading-relaxed text-transparent caret-white focus:outline-none resize-none scrollbar-thin relative z-10"
             style={{ caretColor: '#fff' }}
           />
@@ -303,7 +448,7 @@ const ComposerNode: React.FC<NodeProps> = ({ id, data, selected }) => {
             <div className="px-2 py-1 border-b border-white/[0.05]">
               <p className="text-[10px] text-slate-600 font-medium">Context Blocks</p>
             </div>
-            {suggestions.map((n) => {
+            {suggestions.map((n, index) => {
               const isConnected = connectedNodeIds.has(n.id);
               return (
                 <button
@@ -313,7 +458,12 @@ const ComposerNode: React.FC<NodeProps> = ({ id, data, selected }) => {
                     e.stopPropagation();
                     insertMention(n.title);
                   }}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-xs hover:bg-white/[0.06] transition-all"
+                  className={clsx(
+                    'flex items-center gap-2 w-full px-3 py-2 text-xs transition-all',
+                    activeSuggestionIndex === index
+                      ? 'bg-white/[0.08]'
+                      : 'hover:bg-white/[0.06]'
+                  )}
                 >
                   <span
                     className={clsx(
@@ -353,7 +503,7 @@ const ComposerNode: React.FC<NodeProps> = ({ id, data, selected }) => {
         </div>
 
         <div className="text-xs text-slate-400">
-          {composerData.tokenCount.toLocaleString()} tokens
+          {estimateTokens(localPrompt).toLocaleString()} tokens
         </div>
       </div>
     </div>
